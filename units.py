@@ -1,28 +1,18 @@
 # use this for graphs
 class Rep:
-    def __init__(self, *, id:int, label:str=None, base:set):
+    def __init__(self, *, id:int, base:set, activation:float=.0):
         self.id = id
         self.base = base
-    # def getLabel(self)->str:
-    #     return self.label
-    # def fetId(self)->int:
-    #     return self.id
-    # def getBase(self)->set:
-    #     return self.base
-
+        self.activation = activation
 
 class Act:
-    def __init__(self, *, id:int, label:str=None, base:list):
+    def __init__(self, *, id:int, base:list, activation:float=.0):
         self.id = id
-        if not label:
-            self.label = 'a'+str(id)
-        else:
-            self.label = label
         self.base = base
-    # def getLabel(self)->str:
-    #     return self.label
-    # def fetId(self)->int:
-    #     return self.id
-    # def getBase(self)->list:
-    #     return self.base
+        self.activation = activation
+class Edge:
+    def __init__(self, *, ends:tuple, count:int=0, weight:float=.5) -> None:
+        self.ends = ends
+        self.count = count
+        self.weight = weight
     
