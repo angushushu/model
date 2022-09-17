@@ -1,3 +1,4 @@
+from cProfile import label
 import networkx as nx
 import matplotlib.pyplot as plt
 from units import Rep, Act
@@ -7,34 +8,52 @@ class RGraph:
         print('initializing RGraph...')
         self.graph = nx.DiGraph()
         for ru_id in rep_units:
-            self.graph.add_node(ru_id, type='ru', activation=.0)
+            self.graph.add_node(ru_id, type='ru', label='', activation=.0)
     def addRep(self, *, id, base):
-        for ru in base:
-            if not self.graph.has_node(ru):
+        for r in base:
+            if not self.graph.has_node(r):
                 return
-        self.graph.add_node(id, type='r', activation=.0)
-        for ru in base:
-            self.graph.add_edge(ru, id)
+        self.graph.add_node(id, type='r', label='', activation=.0)
+        for r in base:
+            self.graph.add_edge(r, id)
+    def setLabel(self, *, id, label):
+        nx.set_node_attributes(self.graph, {id:label}, name="label")
     def draw(self):
-        nx.draw(self.graph)
+        # nx.draw(self.graph,with_labels=True)
+        pos = nx.spring_layout(self.graph)
+        nx.draw_networkx_nodes(
+            self.graph,
+            pos,
+            nodelist=self.graph.nodes,
+            with_labels=True,
+            node_color='#42f5ef'
+        )
+        nx.draw_networkx_edges(
+            self.graph,
+            pos,
+            edgelist=self.graph.edges,
+            width=2,
+            alpha=0.5,
+            edge_color="#000",
+        )
 
 class AGraph: # not sure about the graph
     def __init__(self, *, act_units:set=set()):
         print('initializing AGraph...')
         self.graph = nx.DiGraph()
         for au_id in act_units:
-            self.graph.add_node(au_id, type='au', activation=.0)
+            self.graph.add_node(au_id, type='au', label='', activation=.0)
     def addAct(self, *, id, base:list):
-        for au in base:
-            if not self.graph.has_node(au):
+        for a in base:
+            if not self.graph.has_node(a):
                 return
-            else:
-                
-        self.graph.add_node(id, type='r', activation=.0)
-        for ru in base:
-            self.graph.add_edge(ru, id)
+        self.graph.add_node(id, type='a', label='', activation=.0)
+        for i in range(0,len(base)-1):
+            self.graph.add_edge(base[i], base[i+1])
+        self.graph.add_edge(id,base[0])
+        self.graph.add_edge(base[-1],id)
     def draw(self):
-        nx.draw(self.graph)
+        nx.draw(self.graph,with_labels=True)
 
 class SAGraph:
     def __init__(self, *, rep_units:set=set(), act_units:set=set()) -> None:
