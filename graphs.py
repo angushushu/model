@@ -1,7 +1,43 @@
 from cProfile import label
+from logging import root
 import networkx as nx
 import matplotlib.pyplot as plt
 from units import Rep, Act
+
+def drawGraph(*, g, mapping):
+    print('Shared drawing func')
+    pos = nx.spring_layout(g)
+    nodes = g.nodes
+    
+    # print(nodes[40]['type'])
+    colors = [mapping[nodes[n]['type']] for n in nodes]
+    labels = {}
+    # draw labels
+    for n in nodes:
+        if nodes[n]['label'] != '':
+            labels[n] = nodes[n]['label']
+        else:
+            labels[n] = n
+    nx.draw_networkx_nodes(
+        g,
+        pos,
+        nodelist=nodes,
+        node_color=colors
+    )
+    nx.draw_networkx_labels(
+        g,
+        pos,
+        labels=labels,
+        font_color='#000'
+    )
+    nx.draw_networkx_edges(
+        g,
+        pos,
+        edgelist=g.edges,
+        width=2,
+        alpha=0.5,
+        edge_color="#000",
+    )
 
 class RGraph:
     def __init__(self, *, rep_units:set=set()):
@@ -19,23 +55,10 @@ class RGraph:
     def setLabel(self, *, id, label):
         nx.set_node_attributes(self.graph, {id:label}, name="label")
     def draw(self):
+        mapping = dict([('ru','#45bf5f'),('r','#2599b0')])
+        drawGraph(g=self.graph,mapping=mapping)
         # nx.draw(self.graph,with_labels=True)
-        pos = nx.spring_layout(self.graph)
-        nx.draw_networkx_nodes(
-            self.graph,
-            pos,
-            nodelist=self.graph.nodes,
-            with_labels=True,
-            node_color='#42f5ef'
-        )
-        nx.draw_networkx_edges(
-            self.graph,
-            pos,
-            edgelist=self.graph.edges,
-            width=2,
-            alpha=0.5,
-            edge_color="#000",
-        )
+
 
 class AGraph: # not sure about the graph
     def __init__(self, *, act_units:set=set()):
@@ -43,17 +66,41 @@ class AGraph: # not sure about the graph
         self.graph = nx.DiGraph()
         for au_id in act_units:
             self.graph.add_node(au_id, type='au', label='', activation=.0)
+            # print(self.graph.nodes[au_id])
     def addAct(self, *, id, base:list):
         for a in base:
             if not self.graph.has_node(a):
                 return
-        self.graph.add_node(id, type='a', label='', activation=.0)
-        for i in range(0,len(base)-1):
-            self.graph.add_edge(base[i], base[i+1])
-        self.graph.add_edge(id,base[0])
-        self.graph.add_edge(base[-1],id)
+        nx.add_cycle(self.graph, [id]+base+[id])
+        nx.set_node_attributes(self.graph, {id:{'type':'a','label':'','activation':.0}})
+    def Cycles(self, *, act):
+        print(sorted(nx.simple_cycles(self.graph)))
     def draw(self):
-        nx.draw(self.graph,with_labels=True)
+        mapping = dict([('au','red'),('a','yellow')])
+        drawGraph(g=self.graph,mapping=mapping)
+
+class Actions: # not in graph form
+    def __init__(self, *, act_units:set=set()):
+        print('initializing Actions...')
+        self.actions = []
+        for au_id in act_units: # au
+            self.actions.append({'id':au_id,'type':'au','label':'','activation':.0})
+    def addAct(self, *, id, base:list): # list of act id
+        ids = [a['id'] for a in self.actions]
+        for a in base:
+            if not a in ids:
+                return
+        print('adding',{'id':id,'type':'a','label':'','activation':.0})
+        self.actions.append({'id':id,'type':'a','label':'','activation':.0,'base':base})
+    def allAct(self, *, id_only=False):
+        if id_only:
+            return [a['id'] for a in self.actions]
+        return self.actions
+    def getAct(self, *, id):
+        for a in self.actions:
+            if a['id']==id:
+                return a
+        return None
 
 class SAGraph:
     def __init__(self, *, rep_units:set=set(), act_units:set=set()) -> None:
