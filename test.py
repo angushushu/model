@@ -1,7 +1,7 @@
 import graphs as g
-import units as u
+import aiog as u
 import sqlite3
-from units import Rep, Act
+from aiog import Rep, Act
 import matplotlib.pyplot as plt
 import random
 

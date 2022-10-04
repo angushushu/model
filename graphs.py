@@ -1,9 +1,7 @@
 from cProfile import label
 from logging import root
-from typing import Dict
 import networkx as nx
 import matplotlib.pyplot as plt
-from units import Rep, Act
 
 def drawGraph(*, g, mapping):
     print('Shared drawing func')
@@ -108,7 +106,7 @@ class Actions: # not in graph form
                 return a
         return None
 
-class SAGraph:
+class EGraph: # 用于存储任何预期图，需求图为该类的特殊情况
     def __init__(self, *, rep_units:set=set()) -> None:
         print('initializing SAGraph...')
         self.graph = nx.DiGraph()
@@ -116,7 +114,9 @@ class SAGraph:
         for ru_id in rep_units:
             self.graph.add_node(ru_id, type='ru', label='', activation=.0)
     # set one rep as the ultimate goal
-    def setNeedById(self, *, id) -> None:
+    def setNeed(self, *, need) -> None:
+        if type(need) is dict:
+            need = self.addRep(id=need['id'], base=need['base'])
         print('*',id)
         self.need = next(r for r in self.graph.nodes if r.id==id)
     # add one rep
