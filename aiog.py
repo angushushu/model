@@ -1,5 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 from graphs import drawGraph
 
 # all in one graph
@@ -27,6 +29,13 @@ class Graph:
         for r in base:
             self.graph.add_edge(r,id)
         return id
+    # get rep obj through id
+    def getRep(self, id):
+        return next((r for r in self.reps if r.id==id),None)
+    def allRep(self):
+        for x,y in self.graph.nodes(data=True):
+            print(x,y)
+        return [(id, data) for id,data in self.graph.nodes(data=True) if data['type']=='ru' or data['type']=='r']
     def addAct(self, id, base:list): # list of act id
         ids = [a['id'] for a in self.actions]
         for a in base:
@@ -49,11 +58,36 @@ class Graph:
             rep1 = self.addRep(id=rep1['id'], base=rep1['base'])
             rep2 = self.addRep(id=rep2['id'], base=rep2['base'])
         self.graph.add_edge(rep1, rep2)
-    # get rep obj through id
-    def getRep(self, id):
-        return next((r for r in self.reps if r.id==id),None)
     # draw the graph
     def draw(self) -> None:
-        mapping = dict([('ru','#45bf5f'),('r','#2599b0')])
-        drawGraph(g=self.graph, mapping=mapping)
+        pos = nx.spring_layout(self.graph, dim=3, seed=779)
+        node_xyz = np.array([pos[v] for v in sorted(self.graph)])
+        edge_xyz = np.array([(pos[u],pos[v]) for u,v in self.graph.edges()])
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        # Plot the nodes - alpha is scaled by "depth" automatically
+        ax.scatter(*node_xyz.T, s=100, ec="w")
+
+        # Plot the edges
+        for vizedge in edge_xyz:
+            ax.plot(*vizedge.T, color="tab:gray")
+
+        # mapping = dict([('ru','#45bf5f'),('r','#2599b0')])
+        # drawGraph(g=self.graph, mapping=mapping)
+        self._format_axes(ax)
+        fig.tight_layout()
+        plt.show()
+
+    def _format_axes(self, ax):
+        """Visualization options for the 3D axes."""
+        # Turn gridlines off
+        ax.grid(False)
+        # Suppress tick labels
+        for dim in (ax.xaxis, ax.yaxis, ax.zaxis):
+            dim.set_ticks([])
+        # Set axes labels
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_zlabel("z")
     

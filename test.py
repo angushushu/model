@@ -1,7 +1,5 @@
 import graphs as g
-import aiog as u
 import sqlite3
-from aiog import Rep, Act
 import matplotlib.pyplot as plt
 import random
 
@@ -9,22 +7,22 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 # example of RGraph
-# rep_units = set()
-# for i in range(0,30):
-#     rep_units.add(i)
-# r = g.RGraph(rep_units=rep_units)
-# for i in range(30,40):
-#     base = set()
-#     for j in range(0, random.choice(range(0,30))):
-#         base.add(random.choice(range(0,30)))
-#     r.addRep(id=i,base=base)
-# for i in range(40,45):
-#     base = set()
-#     for j in range(0, random.choice(range(0,40))):
-#         base.add(random.choice(range(0,40)))
-#     r.addRep(id=i,base=base)
-# r.graph.nodes()
-# r.draw()
+rep_units = set()
+for i in range(0,30):
+    rep_units.add(i)
+r = g.RGraph(rep_units=rep_units)
+for i in range(30,40):
+    base = set()
+    for j in range(0, random.choice(range(0,30))):
+        base.add(random.choice(range(0,30)))
+    r.addRep(id=i,base=base)
+for i in range(40,45):
+    base = set()
+    for j in range(0, random.choice(range(0,40))):
+        base.add(random.choice(range(0,40)))
+    r.addRep(id=i,base=base)
+r.graph.nodes()
+r.draw()
 # example of AGraph
 # act_units = set()
 # for i in range(0,20):
@@ -50,10 +48,11 @@ import matplotlib.pyplot as plt
 # print(a.getAct(id=1))
 # print(a.getAct(id=4))
 # print(a.allAct(id_only=True))
-a = g.SAGraph(rep_units={1,2,3})
-a.addRep(id=4, base={1,2})
-a.setAct(rep1={'id':5,'base':[2,3]},act=1,rep2={'id':6,'base':[1,4]})
-a.draw()
+
+# a = g.SAGraph(rep_units={1,2,3})
+# a.addRep(id=4, base={1,2})
+# a.setAct(rep1={'id':5,'base':[2,3]},act=1,rep2={'id':6,'base':[1,4]})
+# a.draw()
 plt.show()
 
 # con = sqlite3.connect('example.db')
