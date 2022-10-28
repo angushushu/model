@@ -1,6 +1,8 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+from Arrow3D import Arrow3D
+from Annotation3D import Annotation3D
 from mpl_toolkits.mplot3d import Axes3D
 from graphs import drawGraph
 
@@ -31,7 +33,7 @@ class Graph:
         return id
     # get rep obj through id
     def getRep(self, id):
-        return next((r for r in self.reps if r.id==id),None)
+        return next((r for r in self.graph.nodes(data=True) if r[0]==id),None)
     def allRep(self):
         for x,y in self.graph.nodes(data=True):
             print(x,y)
@@ -61,17 +63,60 @@ class Graph:
     # draw the graph
     def draw(self) -> None:
         pos = nx.spring_layout(self.graph, dim=3, seed=779)
-        node_xyz = np.array([pos[v] for v in sorted(self.graph)])
-        edge_xyz = np.array([(pos[u],pos[v]) for u,v in self.graph.edges()])
-
+        # determine z axis based on type
+        node_xyz = np.empty([0,3])
+        node_id = np.empty([0])
+        for v in sorted(self.graph.nodes(data=True)):
+            print('v:', v)
+            node_id = np.append(node_id, [v[0]]) # for label
+            if v[1]['type'] == 'ru':
+                ru_pos = pos[int(v[0])]
+                print('ru_pos_1:',ru_pos.shape)
+                ru_pos[2] = 0
+                print('ru_pos_2:', ru_pos)
+                print('ru_pos:',ru_pos)
+                node_xyz = np.append(node_xyz, [ru_pos], axis=0)
+            elif v[1]['type'] == 'r':
+                ru_pos = pos[int(v[0])]
+                print('ru_pos_1:',ru_pos.shape)
+                ru_pos[2] = self._rep_depth(v)
+                print('ru_pos_2:', ru_pos)
+                print('ru_pos:',ru_pos)
+                node_xyz = np.append(node_xyz, [ru_pos], axis=0)
+            else:
+                node_xyz = np.append(node_xyz, [pos[v[0]]], axis=0)
+        print(node_xyz.shape)
+        # determine style based type (RAR, RR)
+        # edge_xyz = np.array([(pos[u],pos[v]) for u,v in self.graph.edges()])
+        RR_edge_xyz = np.empty([0,2,3])
+        RAR_edge_xyz = np.empty([0,2,3])
+        print('RR_edge_xyz', RR_edge_xyz)
+        for e in self.graph.edges(data=True):
+            print('e:',e)
+            if 'act' in e[2]:
+                print('RAR')
+                print('[pos[e[0]], pos[e[1]]]:', [pos[e[0]], pos[e[1]]])
+                RAR_edge_xyz = np.append(RAR_edge_xyz, [[pos[e[0]], pos[e[1]]]], axis=0)
+            else:
+                print('RR')
+                RR_edge_xyz = np.append(RR_edge_xyz, [[pos[e[0]], pos[e[1]]]], axis=0)
+        print(RR_edge_xyz)
+        print(RAR_edge_xyz)
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
         # Plot the nodes - alpha is scaled by "depth" automatically
         ax.scatter(*node_xyz.T, s=100, ec="w")
-
+        for i in range(0,len(node_id)):
+            ax.text(*node_xyz[i].T, str(node_id[i]))
+            # self._annotate3D(ax, str(node_id[i]), node_xyz[i], fontsize=10, xytext=(-3,3), textcoords='offset points', ha='right',va='bottom')
         # Plot the edges
-        for vizedge in edge_xyz:
-            ax.plot(*vizedge.T, color="tab:gray")
+        for vizedge in RR_edge_xyz:
+            print('vizedge:',vizedge[0])
+            ax.plot(*vizedge.T, color="tab:gray") # for bidirectional
+            # edges = Arrow3D(*vizedge.T, mutation_scale=20, lw=3, arrowstyle="-|>", color="r")
+            # ax.add_artist(edges)
+        for vizedge in RAR_edge_xyz:
+            self._arrow3D(ax, *vizedge.T, mutation_scale=20, lw=3, arrowstyle="-|>", color="r")
 
         # mapping = dict([('ru','#45bf5f'),('r','#2599b0')])
         # drawGraph(g=self.graph, mapping=mapping)
@@ -83,6 +128,7 @@ class Graph:
         """Visualization options for the 3D axes."""
         # Turn gridlines off
         ax.grid(False)
+        ax.set_zlim(bottom=0.)
         # Suppress tick labels
         for dim in (ax.xaxis, ax.yaxis, ax.zaxis):
             dim.set_ticks([])
@@ -91,3 +137,17 @@ class Graph:
         ax.set_ylabel("y")
         ax.set_zlabel("z")
     
+    def _rep_depth(self, rep): # using recursion here, but will there be loop?
+        print(type(rep))
+        if rep[1]['type'] == 'ru':
+            return 0
+        else:
+            return 1+max([self._rep_depth(self.getRep(elt)) for elt in rep[1]['base']])
+
+    def _arrow3D(self, ax, s, xyz, *args, **kwargs):
+        edges = Arrow3D(s, xyz, *args, **kwargs)
+        ax.add_artist(edges)
+
+    def _annotate3D(self, ax, s, *args, **kwargs):
+        tag = Annotation3D(s, *args, **kwargs)
+        ax.add_artist(tag)
