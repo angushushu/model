@@ -1,3 +1,5 @@
+# the most abstract version of graphical model
+# in which both act and rep are represented by node
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,44 +10,70 @@ from graphs import drawGraph
 
 # all in one graph
 class Graph:
+    # init graph with au and ru
     def __init__(self, rep_units:set=set(), act_units:set=set()) -> None:
         print('initializing SAGraph...')
         self.graph = nx.DiGraph()
-        self.actions = []
+        self._id_cnt = -1 # gen id for nodes
         self.need = None
-        for ru_id in rep_units:
-            self.graph.add_node(ru_id, type='ru', label='', activation=.0)
-        for au_id in act_units:
-            self.actions.append({'id':au_id,'type':'au','label':'','activation':.0})
+        for ru_l in rep_units:
+            ruid = self._nextId()
+            print('ru %s added with id %s' % (ru_l, ruid))
+            self.graph.add_node(ruid, type='ru', label=ru_l, activation=.0)
+        for au_l in act_units:
+            auid = self._nextId()
+            print('au %s added with id %s' % (au_l, auid))
+            self.graph.add_node(auid, type='au', label=au_l, activation=.0)
+    # gen node id
+    def _nextId(self) -> int:
+        self._id_cnt += 1
+        return self._id_cnt # start from 0
     # set goals
     def setNeedById(self, id) -> None:
+        # should filter out acts
         print('*',id)
-        self.need = next(r for r in self.graph.nodes if r.id==id)
+        self.need = next(n for n in self.graph.nodes if n.id==id)
     # add one rep
-    def addRep(self, id, base:set=set()) -> None:
+    def addRep(self, label, base:set=set()) -> None:
         # must formed by existed rep_units
         for r in base:
             if not self.graph.has_node(r):
                 return
-        self.graph.add_node(id, type='r', label='', activation=.0, base=base)
+        rid = self._nextId()
+        self.graph.add_node(rid, type='r', label=label, activation=.0, base=base)
         for r in base:
-            self.graph.add_edge(r,id)
-        return id
-    # get rep obj through id
+            self.graph.add_edge(r,rid)
+        return rid
+    # get node obj through id
     def getRep(self, id):
         return next((r for r in self.graph.nodes(data=True) if r[0]==id),None)
-    def allRep(self):
+    # get_all_of(type)
+    def get_nodes(self, ru=True, au=True, r=True, a=True):
         for x,y in self.graph.nodes(data=True):
             print(x,y)
-        return [(id, data) for id,data in self.graph.nodes(data=True) if data['type']=='ru' or data['type']=='r']
-    def addAct(self, id, base:list): # list of act id
+        nodes = []
+        if ru:
+            nodes += [(id, data) for id,data in self.graph.nodes(data=True) if data['type']=='ru']
+        if au:
+            nodes += [(id, data) for id,data in self.graph.nodes(data=True) if data['type']=='au']
+        if r:
+            nodes += [(id, data) for id,data in self.graph.nodes(data=True) if data['type']=='r']
+        if a:
+            nodes += [(id, data) for id,data in self.graph.nodes(data=True) if data['type']=='a']
+        return nodes
+    def addAct(self, label, base:list): # list of act id
         ids = [a['id'] for a in self.actions]
         for a in base:
             if not a in ids:
                 return
-        print('adding',{'id':id,'type':'a','label':'','activation':.0})
-        self.actions.append({'id':id,'type':'a','label':'','activation':.0,'base':base})
-        return id
+        aid = self._nextId()
+        print('adding',{'id':aid,'type':'a','label':label,'activation':.0})
+        self.graph.add_node(aid, type='a', label=label, activation=.0, base=base)
+        for a in base:
+            self.graph.add_edge(a,aid)
+        return aid
+        # self.actions.append({'id':id,'type':'a','label':'','activation':.0,'base':base})
+        # return id
     # set one act btw 2 reps
     def addRAR(self, rep1, act, rep2) -> None:
         if type(act) is dict:
@@ -53,7 +81,8 @@ class Graph:
         if type(rep1) is dict and type(rep2) is dict:
             rep1 = self.addRep(id=rep1['id'], base=rep1['base'])
             rep2 = self.addRep(id=rep2['id'], base=rep2['base'])
-        self.graph.add_edge(rep1, rep2, act=act)
+        self.graph.add_edge(rep1, act)
+        self.graph.add_edge(act, rep2)
     # set direct connect btw 2 reps
     def addRR(self, rep1, rep2) -> None:
         if type(rep1) is dict and type(rep2) is dict:
@@ -83,6 +112,10 @@ class Graph:
                 print('ru_pos_2:', ru_pos)
                 print('ru_pos:',ru_pos)
                 node_xyz = np.append(node_xyz, [ru_pos], axis=0)
+            elif v[1]['type'] == 'a':
+                au_pos = pos[int(v[0])]
+                ru_pos[2] = self._rep_depth(v)
+                node_xyz = np.append(node_xyz, [ru_pos], axis=0)
             else:
                 node_xyz = np.append(node_xyz, [pos[v[0]]], axis=0)
         print(node_xyz.shape)
@@ -91,6 +124,7 @@ class Graph:
         RR_edge_xyz = np.empty([0,2,3])
         RAR_edge_xyz = np.empty([0,2,3])
         print('RR_edge_xyz', RR_edge_xyz)
+        # 以下需改为，如果起点为a或者终点为a
         for e in self.graph.edges(data=True):
             print('e:',e)
             if 'act' in e[2]:

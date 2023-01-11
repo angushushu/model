@@ -1,7 +1,6 @@
-import aiog
+import aiog2
 import sys
 import matplotlib.pyplot as plt
-# from random import randrange
 from random import randint
 
 import networkx as nx
@@ -9,14 +8,7 @@ import matplotlib.pyplot as plt
 
 sys.setrecursionlimit(10**6)
 
-a = aiog.Graph({1,2,3,4,5,6,7,8,9,10}, {1,2})
-rus = set(range(randint(0,10)))
-aus = set(range(randint(0,10)))
-print(rus)
-print(aus)
-a = aiog.Graph(rus, aus)
-for i in range(randint(0,10)):
-    a.addRep(i, {randint(0, len(rus)),randint(0, len(rus))})
+a = aiog2.Graph({1,2,3}, {'a','b'})
 # # lvl 1
 # a.addRep(11,{1,2})
 # a.addRep(12,{5,6})
