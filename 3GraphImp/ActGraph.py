@@ -1,13 +1,25 @@
+from cProfile import label
+from logging import root
+import networkx as nx
+import matplotlib.pyplot as plt
+from EltType import Type
+import Graph
+
 class Graph:
-    def __init__(self, rep_units:set=set(), act_units:set=set()) -> None:
-        print('initializing SAGraph...')
+    def __init__(self, act_units:set=set()) -> None:
+        self.id_cnt = 0
         self.graph = nx.DiGraph()
-        self.actions = []
-        self.need = None
-        for ru_id in rep_units:
-            self.graph.add_node(ru_id, type='ru', label='', activation=.0)
+        for au_id in act_units:
+            self.graph.add_node(au_id, type='ru', label='', activation=.0)
         for au_id in act_units:
             self.actions.append({'id':au_id,'type':'au','label':'','activation':.0})
+    def next_au_id(self) -> int:
+        self.id_cnt += 1
+        return 'au_' + str(self.id_cnt)  # au_ indicates this is an act unit
+
+    def next_a_id(self) -> int:
+        self.id_cnt += 1
+        return 'a_' + str(self.id_cnt)  # r_ indicates this is an act
     # set goals
     def setNeedById(self, id) -> None:
         print('*',id)
