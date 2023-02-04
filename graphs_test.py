@@ -8,19 +8,19 @@ import matplotlib.pyplot as plt
 
 # example of RGraph
 rep_units = set()
-for i in range(0,30):
+for i in range(0, 30):
     rep_units.add(i)
 r = g.RGraph(rep_units=rep_units)
-for i in range(30,40):
+for i in range(30, 40):
     base = set()
-    for j in range(0, random.choice(range(0,30))):
-        base.add(random.choice(range(0,30)))
+    for j in range(0, random.choice(range(0, 30))):
+        base.add(random.choice(range(0, 30)))
     r.addRep(id=i,base=base)
 for i in range(40,45):
     base = set()
-    for j in range(0, random.choice(range(0,40))):
-        base.add(random.choice(range(0,40)))
-    r.addRep(id=i,base=base)
+    for j in range(0, random.choice(range(0, 40))):
+        base.add(random.choice(range(0, 40)))
+    r.addRep(id=i, base=base)
 r.graph.nodes()
 r.draw()
 # example of AGraph

@@ -14,7 +14,7 @@ class RepGraph:
     connect()
     '''
 
-    def __init__(self, rus: set = set()):
+    def __init__(self, rus: set = set()) -> None:
         self.id_cnt = 0
         self.graph = nx.DiGraph()
         for ru in rus:
