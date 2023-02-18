@@ -1,4 +1,3 @@
-from cProfile import label
 from logging import root
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -42,8 +41,9 @@ class RepGraph:
 
     def add_rr(self, rep1, rep2) -> None:
         print('rep1:', rep1)
-        if type(rep1) is dict and type(rep2) is dict:
+        if type(rep1) is dict:
             rep1 = self.add_r(label=rep1["label"], base=rep1["base"])
+        if type(rep2) is dict:
             rep2 = self.add_r(label=rep2["label"], base=rep2["base"])
         self.graph.add_edge(rep1, rep2)
 

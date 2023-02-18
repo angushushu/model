@@ -41,7 +41,7 @@ def draw(g, mapping):
         edgelist=g.edges,
         width=2,
         alpha=0.5,
-        edge_color="#000",
+        edge_color="#aaa",
     )
     nx.draw_networkx_edge_labels(
         g,

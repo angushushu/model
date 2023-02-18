@@ -1,4 +1,3 @@
-from cProfile import label
 from logging import root
 import networkx as nx
 import matplotlib.pyplot as plt

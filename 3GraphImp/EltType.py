@@ -10,3 +10,5 @@ class Type(Enum):
     c1 = 4  # connection 1
     c2 = 5  # connection 2 (w/ action)
     c3 = 6  # connection 3 (w/o action, maybe useful)
+    s = 7 # state for SAG
+    g = 8 # goal for SAG
