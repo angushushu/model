@@ -12,4 +12,5 @@ class Model:
     
     # when new stimuli comes, input in labels
     def perceive(self, input:set[str]):
+        self.reps.to_ids(input)
         self.reps.activate(input)
