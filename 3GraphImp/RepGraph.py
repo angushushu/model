@@ -16,6 +16,10 @@ class RepGraph:
     def __init__(self, rus: set = set()) -> None:
         self.id_cnt = 0
         self.graph = nx.DiGraph()
+        self.nodes = self.graph.nodes
+        self.forward_rate = .5
+        self.backward_rate = .125
+        self.decline_rate = .5
         for ru in rus:
             self.graph.add_node(self.next_ru_id(), type=Type.ru, label=ru, activation=.0)
 
@@ -48,6 +52,71 @@ class RepGraph:
         self.graph.add_edge(rep1, rep2)
 
     def draw(self):
-        print(self.graph.nodes)
-        mapping = dict([(Type.ru, '#45bf5f'), (Type.r, '#2599b0')])
+        print(self.nodes)
+        mapping = dict([(Type.ru, '#45ff6d'), (Type.r, '#2edcff')])
         Graph.draw(self.graph, mapping)
+    
+    # get all ids of all reps that match the label
+    def get_id(self, label:str):
+        return [x for x,y in self.graph.nodes(data=True) if y['label'] == label]
+
+    # get dict for label:[ids]
+    def get_ids(self, labels:list[str]):
+        ret = dict()
+        for l in labels:
+            ret[l] = self.get_id(l)
+        return ret
+
+    def get_label(self, id:str):
+        return self.nodes[id]['label']
+
+    # get dict for id:label
+    def labels(self, ids:list[str]):
+        ret = dict()
+        for i in ids:
+            ret[i] = self.get_label()
+        return ret
+
+    def activate_single(self, id:str, rate:float):
+        self.nodes[id]['activation'] += rate # += or =? += indicates no upper bound
+        return
+
+    # use ids for uniqueness of each rep
+    def activate(self, ids:list[str], rate:float):
+        for id in ids:
+            self.activate_single(id, rate)
+        return
+
+    def decline_single(self, id:str, rate:float):
+        self.nodes[id]['activation'] *= rate # += or =? += indicates no upper bound
+        return
+
+    # use ids for uniqueness of each rep
+    def decline(self, ids:list[str], rate:float):
+        for id in ids:
+            self.decline_single(id, rate)
+        return
+    
+    def next(self, *, activation = True, decline = True):
+        # activation
+        if activation:
+            activated = [(x,y) for x,y in self.graph.nodes(data=True) if y['activation'] > 0]
+            print('activated:', activated)
+            for x,y in activated:
+                outs = list(self.graph.neighbors(x))
+                # print('outs:', outs)
+                for out_n in outs:
+                    print('test',x,'-',y)
+                    print(out_n)
+                    self.activate_single(out_n, y['activation']*self.forward_rate)
+
+                ins = list(self.graph.predecessors(x))
+                # print('ins:', ins)
+                for in_n in ins:
+                    self.activate_single(in_n, y['activation']*self.backward_rate)
+        # decline
+        if decline:
+            self.decline(self.graph.nodes, self.decline_rate)
+        # NOTE: here the order of activation and decline leads to the fineness issue,
+        #       might need to use function on time instead of tick (or at least set into multi stages)
+        return

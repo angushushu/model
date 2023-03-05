@@ -9,18 +9,18 @@ def draw(g, mapping):
     pos = nx.spring_layout(g)
     nodes = g.nodes
 
-    #
-    # for i in nodes:
-    #     print(i)
-    #     print(nodes[i])
-
-    # print(nodes[40]['type'])
-    colors = [mapping[nodes[n]['type']] for n in nodes]
+    # trans hex base on activation
+    def adjust_color(hex, perc):
+        perc = min(1.0, perc)*.5+.5
+        rgb = tuple(int(hex[i:i+2], 16) for i in (0, 2, 4))
+        rgb = tuple([int(perc*x) for x in rgb])
+        return '%02x%02x%02x' % rgb
+    colors = ['#'+adjust_color(mapping[nodes[n]['type']].lstrip('#'),nodes[n]['activation']) for n in nodes]
     labels = {}
     # draw labels
     for n in nodes:
         if nodes[n]['label'] != '':
-            labels[n] = nodes[n]['label']
+            labels[n] = str(nodes[n]['label']) + '-' + str(round(nodes[n]['activation'],2))
         else:
             labels[n] = n
     nx.draw_networkx_nodes(
