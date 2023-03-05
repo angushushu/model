@@ -13,13 +13,13 @@ class RepGraph:
     connect()
     '''
 
-    def __init__(self, rus: set = set()) -> None:
+    def __init__(self, rus: set[str] = set(), *, forward_r = 1.0, backward_r = .0, decline_r = .5) -> None:
         self.id_cnt = 0
         self.graph = nx.DiGraph()
         self.nodes = self.graph.nodes
-        self.forward_rate = .5
-        self.backward_rate = .125
-        self.decline_rate = .5
+        self.forward_rate = forward_r
+        self.backward_rate = backward_r
+        self.decline_rate = decline_r
         for ru in rus:
             self.graph.add_node(self.next_ru_id(), type=Type.ru, label=ru, activation=.0)
 
@@ -66,6 +66,12 @@ class RepGraph:
         for l in labels:
             ret[l] = self.get_id(l)
         return ret
+    
+    def to_ids(self, labels:set[str]):
+        ret = set()
+        for l in labels:
+            ret.add(self.get_id(l))
+        return ret
 
     def get_label(self, id:str):
         return self.nodes[id]['label']
@@ -82,7 +88,7 @@ class RepGraph:
         return
 
     # use ids for uniqueness of each rep
-    def activate(self, ids:list[str], rate:float):
+    def activate(self, ids:set[str], rate:float):
         for id in ids:
             self.activate_single(id, rate)
         return
@@ -92,7 +98,7 @@ class RepGraph:
         return
 
     # use ids for uniqueness of each rep
-    def decline(self, ids:list[str], rate:float):
+    def decline(self, ids:set[str], rate:float):
         for id in ids:
             self.decline_single(id, rate)
         return
