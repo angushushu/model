@@ -21,7 +21,7 @@ class RepGraph:
         self.backward_rate = backward_r
         self.decline_rate = decline_r
         for ru in rus:
-            self.graph.add_node(self.next_ru_id(), type=Type.ru, label=ru, activation=.0)
+            self.__add_ru(ru)
 
     def next_ru_id(self) -> int:
         self.id_cnt += 1
@@ -31,13 +31,22 @@ class RepGraph:
         self.id_cnt += 1
         return 'r_' + str(self.id_cnt)  # r_ indicates this is a rep
 
+    def __add_ru(self, ru:str):
+        self.graph.add_node(self.next_ru_id(), type=Type.ru, label=ru, activation=.0, position=Graph.get_pos(x=0))
+        print(f"-------------- depth of {self.get_id(ru)} is {nx.get_node_attributes(self.graph, 'position')} -----------------")
+
     def add_r(self, label: str, base: set[str] = set()) -> str:  # base is a set of ids
+        print('welcome to add_r')
+        print(base)
         # must formed by existed rep_units
         for elt in base:  # base only includes r
             if not elt.split('_')[0] in ['r', 'ru'] or not self.graph.has_node(elt):  # 这个检查也许应该在model和其他type一起完成
                 return
         r_id = self.next_r_id()
-        self.graph.add_node(r_id, type=Type.r, label=label, activation=.0, base=base)
+        depth = max([self.nodes[x]['position'][0] for x in base]) + 1  # get the max depth of base
+        print(f'-------------- depth of {r_id} is {depth} -----------------')
+        self.graph.add_node(r_id, type=Type.r, label=label, activation=.0, base=base, position=Graph.get_pos(x=depth))
+        print(f"-------------- pos of {r_id} is {self.nodes[r_id]['position']} -----------------")
         for elt in base:
             if str(elt).split('_')[0] in ['r', 'ru']:
                 self.graph.add_edge(elt, r_id)
@@ -70,7 +79,8 @@ class RepGraph:
     def to_ids(self, labels:set[str]):
         ret = set()
         for l in labels:
-            ret.add(self.get_id(l))
+            print('to_ids --- label ---', l)
+            ret.update(self.get_id(l))
         return ret
 
     def get_label(self, id:str):

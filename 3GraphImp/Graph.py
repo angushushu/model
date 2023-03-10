@@ -2,11 +2,27 @@ from cProfile import label
 from logging import root
 import networkx as nx
 import matplotlib.pyplot as plt
+import random
 
+def get_pos(x = None, y = None): # used when nodes added
+    if x is None:
+        print('not x and x is',x)
+        x = random.randrange(0, 100)
+    if y is None:
+        y = random.randrange(0, 100)
+    return (x, y)
 
 def draw(g, mapping):
     print('Shared drawing func')
-    pos = nx.spring_layout(g)
+    # pos_sp = nx.spring_layout(g)
+    pos = nx.get_node_attributes(g,'position')
+    # pos_final = {'x':[],'y':[]}
+    # print('------pos type: ', pos)
+    # for i in pos:
+    #     print(i)
+    #     print(type(i))
+    #     pos[i] = (pos[i][1], pos_sp[i][1])
+
     nodes = g.nodes
 
     # trans hex base on activation

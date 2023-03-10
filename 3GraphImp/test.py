@@ -12,17 +12,18 @@ import random
 r = RepGraph({1, 2, 3})
 
 # 5 objects each consists of set of features
-objs = []
-for i in range(0,5):
-    obj = []
-    for j in range(random.randint(0,10)):
-        obj.append(f'{i}.{j}')
-    objs.append(obj)
+# objs = []
+# for i in range(0,5):
+#     obj = []
+#     for j in range(random.randint(0,10)):
+#         obj.append(f'{i}.{j}')
+#     objs.append(obj)
 
 
 r.add_rr({"base": {'ru_1', 'ru_2'}, "label": "rep1"}, {"base": {'ru_1', 'ru_3'}, "label": "rep2"})
 print(r.get_id('rep1'))
 print(r.get_ids(['rep1']))
+r.add_r('top', r.to_ids({'rep1','rep2'}))
 r.activate(r.get_id('rep1'), 1)
 for i in range(0,5):
     r.draw()
