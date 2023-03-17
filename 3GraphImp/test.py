@@ -9,7 +9,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import random
 
-r = RepGraph({1, 2, 3})
+r = RepGraph({1, 2, 3}, forward_r = 1.0, backward_r = .0, deactivate_r = .0)
 
 # 5 objects each consists of set of features
 # objs = []
@@ -20,15 +20,16 @@ r = RepGraph({1, 2, 3})
 #     objs.append(obj)
 
 
-r.add_rr({"base": {'ru_1', 'ru_2'}, "label": "rep1"}, {"base": {'ru_1', 'ru_3'}, "label": "rep2"})
-print(r.get_id('rep1'))
-print(r.get_ids(['rep1']))
-r.add_r('top', r.to_ids({'rep1','rep2'}))
-r.activate(r.get_id('rep1'), 1)
-for i in range(0,5):
+r.add_rr({"base": {'ru_1', 'ru_2'}, "label": "r_4"}, {"base": {'ru_1', 'ru_3'}, "label": "r_5"})
+print(r.get_id('r_4'))
+print(r.get_ids(['r_5']))
+r.add_r('r_6', r.to_ids({'r_4','r_5'}))
+r.add_r('r_7', r.to_ids({'r_2','r_5'}))
+r.activate(r.to_ids({1,2}), value=1)
+for i in range(0,10):
     r.draw()
     plt.show()
-    r.next(activation=True,decline=True)
+    r.next(activation=True,deactivate=True)
 r.draw()
 plt.show()
 

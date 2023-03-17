@@ -88,3 +88,5 @@ def draw(g, mapping):
         edge_labels=nx.get_edge_attributes(g, 'act')
     )
 
+def ReLU(input:int):
+    return 0 if input <= 0 else input
