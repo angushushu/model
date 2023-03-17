@@ -1,6 +1,6 @@
-# What is this
+# **What is this**
 
-This repo is for my naive general psychology model. The ideas of the model can be found in my website: angushushu.com
+This repo is for my naive general psychology model, will help building understand of narrative comprehension and other psychological phenomena:+1:. The ideas of the model can be found in [my shitty website](https://angushushu.com)
 
 There are multiple ways to implement it. Integrated implemention may lead to some confusion and difficulty on interpretation, thus I'm currently focusing on the 3 Graphs Implementation. The model is consist of 3 interdependent graphs: representation graph, action graph, and state-action graph.
 
