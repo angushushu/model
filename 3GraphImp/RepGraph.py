@@ -13,13 +13,13 @@ class RepGraph:
     connect()
     '''
 
-    def __init__(self, rus: set[str] = set(), *, forward_r = 1.0, backward_r = .0, decline_r = .5) -> None:
+    def __init__(self, rus: set[str] = set(), *, forward_r = 1.0, backward_r = .0, deactivate_r = .5) -> None:
         self.id_cnt = 0
         self.graph = nx.DiGraph()
         self.nodes = self.graph.nodes
         self.forward_rate = forward_r
         self.backward_rate = backward_r
-        self.decline_rate = decline_r
+        self.deactivate_rate = deactivate_r # for activation
         for ru in rus:
             self.__add_ru(ru)
 
@@ -35,7 +35,7 @@ class RepGraph:
         self.graph.add_node(self.next_ru_id(), type=Type.ru, label=ru, activation=.0, position=Graph.get_pos(x=0))
         print(f"-------------- depth of {self.get_id(ru)} is {nx.get_node_attributes(self.graph, 'position')} -----------------")
 
-    def add_r(self, label: str, base: set[str] = set()) -> str:  # base is a set of ids
+    def add_r(self, label: str = None, base: set[str] = set()) -> str:  # base is a set of ids
         print('welcome to add_r')
         print(base)
         # must formed by existed rep_units
@@ -43,6 +43,7 @@ class RepGraph:
             if not elt.split('_')[0] in ['r', 'ru'] or not self.graph.has_node(elt):  # 这个检查也许应该在model和其他type一起完成
                 return
         r_id = self.next_r_id()
+        label = r_id if label is None else label
         depth = max([self.nodes[x]['position'][0] for x in base]) + 1  # get the max depth of base
         print(f'-------------- depth of {r_id} is {depth} -----------------')
         self.graph.add_node(r_id, type=Type.r, label=label, activation=.0, base=base, position=Graph.get_pos(x=depth))
@@ -64,6 +65,9 @@ class RepGraph:
         print(self.nodes)
         mapping = dict([(Type.ru, '#45ff6d'), (Type.r, '#2edcff')])
         Graph.draw(self.graph, mapping)
+    
+    def bokeh_draw(self):
+        Graph.bokeh_draw(self.graph)
     
     # get all ids of all reps that match the label
     def get_id(self, label:str):
@@ -103,17 +107,17 @@ class RepGraph:
             self.activate_single(id, rate)
         return
 
-    def decline_single(self, id:str, rate:float):
+    def deactivate_single(self, id:str, rate:float):
         self.nodes[id]['activation'] *= rate # += or =? += indicates no upper bound
         return
 
     # use ids for uniqueness of each rep
-    def decline(self, ids:set[str], rate:float):
+    def deactivate(self, ids:set[str], rate:float):
         for id in ids:
-            self.decline_single(id, rate)
+            self.deactivate_single(id, rate)
         return
     
-    def next(self, *, activation = True, decline = True):
+    def next(self, *, activation = True, deactivate = True):
         # activation
         if activation:
             activated = [(x,y) for x,y in self.graph.nodes(data=True) if y['activation'] > 0]
@@ -130,9 +134,35 @@ class RepGraph:
                 # print('ins:', ins)
                 for in_n in ins:
                     self.activate_single(in_n, y['activation']*self.backward_rate)
-        # decline
-        if decline:
-            self.decline(self.graph.nodes, self.decline_rate)
-        # NOTE: here the order of activation and decline leads to the fineness issue,
+        # deactivate
+        if deactivate:
+            self.deactivate(self.graph.nodes, self.deactivate_rate)
+        # NOTE: here the order of activation and deactivate leads to the fineness issue,
         #       might need to use function on time instead of tick (or at least set into multi stages)
         return
+
+    # form cohort 1
+    # when activation reach the highest level, those activated high level reps form new cohort
+    def get_cohort_1(self):
+        out_limit = 1 # for reps with out_degree less than out_limit, consider as elt of new cohort
+        activation_limit = 0.5
+        self.add_r(base=set([n for n in self.nodes if self.graph.out_degree(n) < out_limit \
+                             and self.nodes[n]['activation'] > activation_limit]))
+        return
+
+    # form cohort 2
+    # those activated together for longer time gen. a cohort
+    def get_cohort_2(self):
+        pass
+
+    def cohort_assign()
+
+    # how two reps merge or gen. new one
+    def abstract_intersect():
+        pass
+
+    def abstract_consist():
+        pass
+
+    def specific_union():
+        pass
