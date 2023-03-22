@@ -3,10 +3,22 @@ from logging import root
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
+from EltType import Type
 
 # bokeh
 from bokeh.palettes import Category20_20
 from bokeh.plotting import figure, from_networkx, show
+
+# untested
+def str_to_int_graph(g):
+    mapping = map()
+    mapping = {n:int(Type.str_to_int(n.split('_')[0])+n.split('_')[1]) for n in g.nodes}
+    return nx.relabel_nodes(g, mapping)
+        
+def int_to_str_graph(g):
+    mapping = map()
+    mapping = {n:(Type.int_to_str(int(str(n)[0])+str(n)[1:])) for n in g.nodes}
+    return nx.relabel_nodes(g, mapping)
 
 def bokeh_draw(g):
     # an issue is that, bokeh doesn't support string nodes
