@@ -9,35 +9,36 @@ from EltType import Type
 from bokeh.palettes import Category20_20
 from bokeh.plotting import figure, from_networkx, show
 
-# untested
-def str_to_int_graph(g):
-    mapping = map()
-    mapping = {n:int(Type.str_to_int(n.split('_')[0])+n.split('_')[1]) for n in g.nodes}
-    return nx.relabel_nodes(g, mapping)
+# bokeh doesn't support directed graph
+# # untested
+# def str_to_int_graph(g):
+#     # mapping = map()
+#     mapping = {n:int(str(Type.str_to_int(n.split('_')[0]))+n.split('_')[1]) for n in g.nodes}
+#     return nx.relabel_nodes(g, mapping)
         
-def int_to_str_graph(g):
-    mapping = map()
-    mapping = {n:(Type.int_to_str(int(str(n)[0])+str(n)[1:])) for n in g.nodes}
-    return nx.relabel_nodes(g, mapping)
+# def int_to_str_graph(g):
+#     # mapping = map()
+#     mapping = {n:(Type.int_to_str(int(str(n)[0]))+str(n)[1:]) for n in g.nodes}
+#     return nx.relabel_nodes(g, mapping)
 
-def bokeh_draw(g):
-    # an issue is that, bokeh doesn't support string nodes
+# def bokeh_draw(g):
+#     # an issue is that, bokeh doesn't support string nodes
+#     int_g = str_to_int_graph(g)
+#     p = figure(x_range=(-2, 2), y_range=(-2, 2),
+#             x_axis_location=None, y_axis_location=None,
+#             tools="hover", tooltips="index: @index")
+#     p.grid.grid_line_color = None
 
-    p = figure(x_range=(-2, 2), y_range=(-2, 2),
-            x_axis_location=None, y_axis_location=None,
-            tools="hover", tooltips="index: @index")
-    p.grid.grid_line_color = None
+#     graph = from_networkx(int_g, nx.spring_layout, scale=1.8, center=(0,0))
+#     p.renderers.append(graph)
 
-    graph = from_networkx(g, nx.spring_layout, scale=1.8, center=(0,0))
-    p.renderers.append(graph)
+#     # Add some new columns to the node renderer data source
+#     graph.node_renderer.data_source.data['index'] = list(range(len(g)))
+#     graph.node_renderer.data_source.data['colors'] = Category20_20
 
-    # Add some new columns to the node renderer data source
-    graph.node_renderer.data_source.data['index'] = list(range(len(G)))
-    graph.node_renderer.data_source.data['colors'] = Category20_20
+#     graph.node_renderer.glyph.update(size=20, fill_color="colors")
 
-    graph.node_renderer.glyph.update(size=20, fill_color="colors")
-
-    show(p)
+#     show(p)
 
 def get_pos(x = None, y = None): # used when nodes added
     if x is None:
