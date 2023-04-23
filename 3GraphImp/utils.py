@@ -1,44 +1,20 @@
-from cProfile import label
-from logging import root
+from enum import Enum, unique
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
-from EltType import Type
+import numpy as np
 
-# bokeh
-from bokeh.palettes import Category20_20
-from bokeh.plotting import figure, from_networkx, show
-
-# bokeh doesn't support directed graph
-# # untested
-# def str_to_int_graph(g):
-#     # mapping = map()
-#     mapping = {n:int(str(Type.str_to_int(n.split('_')[0]))+n.split('_')[1]) for n in g.nodes}
-#     return nx.relabel_nodes(g, mapping)
-        
-# def int_to_str_graph(g):
-#     # mapping = map()
-#     mapping = {n:(Type.int_to_str(int(str(n)[0]))+str(n)[1:]) for n in g.nodes}
-#     return nx.relabel_nodes(g, mapping)
-
-# def bokeh_draw(g):
-#     # an issue is that, bokeh doesn't support string nodes
-#     int_g = str_to_int_graph(g)
-#     p = figure(x_range=(-2, 2), y_range=(-2, 2),
-#             x_axis_location=None, y_axis_location=None,
-#             tools="hover", tooltips="index: @index")
-#     p.grid.grid_line_color = None
-
-#     graph = from_networkx(int_g, nx.spring_layout, scale=1.8, center=(0,0))
-#     p.renderers.append(graph)
-
-#     # Add some new columns to the node renderer data source
-#     graph.node_renderer.data_source.data['index'] = list(range(len(g)))
-#     graph.node_renderer.data_source.data['colors'] = Category20_20
-
-#     graph.node_renderer.glyph.update(size=20, fill_color="colors")
-
-#     show(p)
+@unique
+class Type(Enum):
+    ru = 0  # representation unit
+    au = 1  # action unit
+    r = 2   # representation
+    a = 3   # action
+    c1 = 4  # connection 1
+    c2 = 5  # connection 2 (w/ action)
+    c3 = 6  # connection 3 (w/o action, maybe useful)
+    s = 7 # state for SAG
+    g = 8 # goal for SAG
 
 def get_pos(x = None, y = None): # used when nodes added
     if x is None:
@@ -101,5 +77,7 @@ def draw(g, mapping):
         edge_labels=nx.get_edge_attributes(g, 'act')
     )
 
-def ReLU(input:int):
-    return 0 if input <= 0 else input
+def ReLU(x:int):
+    return 0 if x <= 0 else x
+def sigmoid(x:int):
+    return 1/(1 + np.exp(-x))

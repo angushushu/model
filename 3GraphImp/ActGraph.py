@@ -1,8 +1,8 @@
 from logging import root
 import networkx as nx
 import matplotlib.pyplot as plt
-from EltType import Type
-import Graph
+from utils import Type
+import utils
 
 
 class ActGraph:
@@ -42,5 +42,5 @@ class ActGraph:
     def draw(self):
         print(self.graph.nodes)
         mapping = dict([(Type.au, '#45bf00'), (Type.a, '#2599b0')])
-        Graph.draw(self.graph, mapping)
+        utils.draw(self.graph, mapping)
 

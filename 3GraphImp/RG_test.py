@@ -3,13 +3,13 @@ from RepGraph import RepGraph
 from ActGraph import ActGraph
 from SAGraph import SAGraph
 import matplotlib.pyplot as plt
-import random
 
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
+import utils
 
-r = RepGraph({1, 2, 3}, forward_r = 1.0, backward_r = .0, deactivate_r = .0)
+r = RepGraph({1, 2, 3})
 
 # 5 objects each consists of set of features
 # objs = []
@@ -25,11 +25,21 @@ print(r.get_id('r_4'))
 print(r.get_ids(['r_5']))
 r.add_r('r_6', r.to_ids({'r_4','r_5'}))
 r.add_r('r_7', r.to_ids({'r_2','r_5'}))
-r.activate(r.to_ids({1,2}), value=1)
-for i in range(0,10):
+
+r.activate_multi(r.to_ids({1,2}), value=1)
+r.draw()
+plt.show()
+for i in range(0,2):
+    # r.regular_spread()
+    r.conserv_spread()
     r.draw()
     plt.show()
-    r.next(activation=True,deactivate=True)
+    r.activate_func(utils.sigmoid)
+    r.draw()
+    plt.show()
+    r.deactivate_all(0.2)
+    r.draw()
+    plt.show()
 r.draw()
 plt.show()
 

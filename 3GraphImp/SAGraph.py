@@ -1,21 +1,21 @@
 from logging import root
 import networkx as nx
 import matplotlib.pyplot as plt
-from EltType import Type
-import Graph
+from utils import Type
+import utils
 
 class SAGraph:
     def __init__(self, need: set = None) -> None:
         self.graph = nx.DiGraph()
         if need is not None:
             for goal_id in need: # the goal id should be a rep id
-                self.graph.add_node(goal_id, type=Type.g, label=goal_id, activation=.0, position=Graph.get_pos(x=0), fire_cnt=0)
+                self.graph.add_node(goal_id, type=Type.g, label=goal_id, activation=.0, position=utils.get_pos(x=0), fire_cnt=0)
 
     # add state
     def add_s(self, state_id: str, label: str = None) -> str:
         if label is None:
             label = state_id
-        self.graph.add_node(state_id, type=Type.s, label=label, activation=.0, position=Graph.get_pos(x=1), fire_cnt=0)
+        self.graph.add_node(state_id, type=Type.s, label=label, activation=.0, position=utils.get_pos(x=1), fire_cnt=0)
         return state_id
 
     # state to state path (state use id)
@@ -30,4 +30,4 @@ class SAGraph:
     def draw(self):
         print(self.graph.nodes)
         mapping = dict([(Type.g, '#ff4a4a'),(Type.s, '#32a852'), (Type.a, '#000')])
-        Graph.draw(self.graph, mapping)
+        utils.draw(self.graph, mapping)
