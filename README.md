@@ -10,7 +10,7 @@ There are multiple ways to implement it. Integrated implemention may lead to som
 - [x] Simple test script
 - [x] Activation of reps in rep graph
 - [x] Spreading of activation in rep graph (forward & backward)
-- [x] Cohort generation mechanism
+- [ ] Cohort generation mechanism (moving to Model)
 - [ ] Union of reps
 - [ ] Intersect of reps
 - [ ] Basic features of the act graph
