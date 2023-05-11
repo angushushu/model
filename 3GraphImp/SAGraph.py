@@ -31,3 +31,6 @@ class SAGraph:
         print(self.graph.nodes)
         mapping = dict([(Type.g, '#ff4a4a'),(Type.s, '#32a852'), (Type.a, '#000')])
         utils.draw(self.graph, mapping)
+    
+    def get_all_s(self):
+        return self.graph.nodes

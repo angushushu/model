@@ -33,7 +33,11 @@ class RepGraph:
     def add_ru(self, ru:str, bias:float=0):
         self.graph.add_node(self.next_ru_id(), type=Type.ru, label=ru, activation=.0, bias=bias, position=utils.get_pos(x=0))
 
-    def add_r(self, label: str = None, base: set[str] = set(), *, for_w:float=1, back_w:float=0, bias:float = 0) -> str:  # base is a set of ids
+    def add_r(self, label: str = None, base: set[str] = set(), *, for_w:float=1, back_w:float=0, bias:float = 0, graph:nx.graph = None) -> str:  # base is a set of ids
+        # adding graph as r: add_r(label, graph=graph)
+        if graph is not None:
+            base = graph.nodes
+            self.graph.add_node(r_id, type=Type.r, label=label, activation=.0, base=base, bias=bias, position=utils.get_pos(x=depth), graph=graph)
         print('welcome to add_r')
         print(base)
         # must formed by existed rep_units
