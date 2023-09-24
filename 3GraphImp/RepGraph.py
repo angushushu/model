@@ -66,9 +66,6 @@ class RepGraph:
         mapping = dict([(Type.ru, '#45ff6d'), (Type.r, '#2edcff')])
         utils.draw(self.graph, mapping)
     
-    def bokeh_draw(self):
-        utils.bokeh_draw(self.graph)
-    
     # get all ids of all reps that match the label
     def get_id(self, label:str):
         return [x for x,y in self.graph.nodes(data=True) if y['label'] == label]
@@ -131,6 +128,7 @@ class RepGraph:
 
 
     # need to run regular function
+    # the energy of each node distributed to each out node directly
     def regular_spread(self, *, deact_r:float=1, self_w:float=0): # self_w for circle, for test
         temp = [deepcopy((x,y)) for x,y in self.nodes(data=True)]
         for node,data in temp:
@@ -151,6 +149,7 @@ class RepGraph:
 
     def conserv_spread(self, *, for_w:float=1, back_w:float=0, self_w:float=0):
         # for_w & back_w will be forced set for all edges
+        # the energy of each node is shared by out nodes
         temp = [deepcopy((x,y)) for x,y in self.nodes(data=True)]
         for node,data in temp:
             if data['activation'] > 0:
