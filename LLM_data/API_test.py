@@ -34,5 +34,5 @@ while len(states) < 100:
         new_states = extract_states(cand['content'])
         states += new_states
 
-with open(os.getcwd()+'/states.json', 'w', encoding='utf-8') as f:
+with open(os.getcwd()+'/states_2.json', 'w', encoding='utf-8') as f:
     json.dump(states, f, ensure_ascii=False, indent=4)
