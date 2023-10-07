@@ -4,6 +4,11 @@ import google.generativeai as palm
 import re
 import json
 import os
+
+'''
+Ask LLM randomly generate ~100 states in the format of set
+'''
+
 def extract_states(input_string):
     # Regular expression to find all occurrences of sets
     set_regex = re.compile(r'\{(.*?)\}')
