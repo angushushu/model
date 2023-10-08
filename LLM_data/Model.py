@@ -1,4 +1,4 @@
-from Graph import Graph
+from Graph_opt import Graph
 import json
 import os
 
@@ -20,7 +20,7 @@ def generate_id():
 id_gen = generate_id()
 
 # Add nodes and edges to the graph
-for j, sequence in enumerate(sequences[0:2]):  # Using all sequences
+for j, sequence in enumerate(sequences):  # Using all sequences
     if sequence is None:
         continue
     # print('sequence', sequence)
@@ -29,7 +29,7 @@ for j, sequence in enumerate(sequences[0:2]):  # Using all sequences
         # print('i', i)
         # print('state', state)
         state_id = next(id_gen)
-        state_label = f"Seq{j+1}-S{i + 1}"
+        state_label = str(state)
         # print('state_label', state_label)
         state_label = graph.add_rep(state_label, value=sorted(state))  # Storing id as value for future use
         # print(state_label)
@@ -46,7 +46,8 @@ for j, sequence in enumerate(sequences[0:2]):  # Using all sequences
             graph.add_edge(label_seq[i-1], state_label, connection_type="2")
 
 # Calculate coordinates and visualize the graph
-graph.calculate_coordinates()
+#spring, shell, kamada_kawai, fruchterman_reingold, spectral, planar
+graph.calculate_coordinates('kamada_kawai')
 print('hi')
 graph.visualize_graph()
 print('hi2')
@@ -55,3 +56,4 @@ for node, data in graph.graph.nodes(data=True):
         print(graph.graph.nodes[node]['x'],graph.graph.nodes[node]['y'],graph.graph.nodes[node]['z'])
     if data['label'] == 'Seq1-S4':
         print(graph.graph.nodes[node]['x'],graph.graph.nodes[node]['y'],graph.graph.nodes[node]['z'])
+graph.save_graph('saved_graph.pkl')

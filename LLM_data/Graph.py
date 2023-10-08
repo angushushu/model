@@ -5,6 +5,8 @@ import plotly.graph_objects as go
 import random
 import numpy as np
 import queue
+import pickle
+import scipy
 
 class Graph:
     def __init__(self):
@@ -125,92 +127,84 @@ class Graph:
             print(self.graph.nodes[node]['z'])
         return max_z + 2
 
-    def _distribute_nodes(self):
+    def _compute_xy_coordinates(self, layout):
         max_z = max(data['z'] for _, data in self.graph.nodes(data=True))
         nodes_by_depth = {z: [] for z in range(max_z + 1)}
 
         for node, data in self.graph.nodes(data=True):
             nodes_by_depth[data['z']].append(node)
 
-        for z in reversed(range(max_z + 1)):
-            nodes_at_depth = nodes_by_depth[z]
-            centers = [node for node in nodes_at_depth if
-                       self.graph.out_degree(node) == 0 and self.graph.in_degree(node) > 0]
+        # Handling nodes with the highest z using force-directed graph drawing
+        highest_z_nodes = nodes_by_depth[max_z]
+        subgraph = self.graph.subgraph(highest_z_nodes).copy()
+        subgraph.remove_edges_from([(u, v) for u, v, d in subgraph.edges(data=True) if d['type'] != "2"])
 
-            # Distribute center nodes randomly
-            for center in centers:
-                while True:
-                    x = random.uniform(-50, 50)
-                    y = random.uniform(-50, 50)
-                    if all(math.sqrt((x - data['x']) ** 2 + (y - data['y']) ** 2) > 1
-                           for other_node, data in self.graph.nodes(data=True) if
-                           data['z'] == z and other_node != center):
-                        self.graph.nodes[center]['x'] = x
-                        self.graph.nodes[center]['y'] = y
-                        break
+        if nx.number_of_edges(subgraph) > 0:
+            if layout == 'shell':
+                layout_pos = nx.shell_layout(subgraph)  # shell_layout without considering edge weights
+            elif layout == 'spring':
+                layout_pos = nx.spring_layout(subgraph, seed=42)  # seed for reproducibility
+            elif layout == 'kamada_kawai':
+                layout_pos = nx.kamada_kawai_layout(subgraph)
+            elif layout == 'fruchterman_reingold':
+                layout_pos = nx.spring_layout(subgraph)
+            elif layout == 'spectral':
+                layout_pos = nx.spectral_layout(subgraph)
+            elif layout == 'planar':
+                layout_pos = nx.planar_layout(subgraph)
+            else:
+                raise ValueError(
+                    "Invalid layout type. Choose from ['shell', 'spring', 'kamada_kawai', 'fruchterman_reingold', 'spectral', 'planar']")
+            for node, pos in layout_pos.items():
+                print('drawing ...')
+                self.graph.nodes[node]['x'] = pos[0] * 50  # scaling to avoid overlap, adjust if necessary
+                self.graph.nodes[node]['y'] = pos[1] * 50  # scaling to avoid overlap, adjust if necessary
+        else:
+            for node in highest_z_nodes:
+                print('drawing ...')
+                self.graph.nodes[node]['x'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
+                self.graph.nodes[node]['y'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
+                while any(
+                        math.sqrt((self.graph.nodes[node]['x'] - self.graph.nodes[other]['x']) ** 2 +
+                                  (self.graph.nodes[node]['y'] - self.graph.nodes[other]['y']) ** 2) < 1
+                        for other in highest_z_nodes if other != node
+                ):
+                    print('    replot...')
+                    self.graph.nodes[node]['x'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
+                    self.graph.nodes[node]['y'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
 
-            # BFS for distributing other nodes
-            for center in centers:
-                q = queue.Queue()
-                q.put((center, 0))  # (node, distance)
-                visited = set([center])
+        # Handling nodes with lower z based on average position of successors and avoiding overlap
+        for z in reversed(range(max_z)):
+            for node in nodes_by_depth[z]:
+                print('drawing ...')
+                successors = [succ for succ in self.graph.successors(node) if
+                              self.graph.edges[node, succ]['type'] == "1"]
+                if successors:
+                    avg_x = np.mean([self.graph.nodes[succ]['x'] for succ in successors])
+                    avg_y = np.mean([self.graph.nodes[succ]['y'] for succ in successors])
+                    self.graph.nodes[node]['x'] = avg_x
+                    self.graph.nodes[node]['y'] = avg_y
+                else:
+                    self.graph.nodes[node]['x'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
+                    self.graph.nodes[node]['y'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
+                    while any(
+                            math.sqrt((self.graph.nodes[node]['x'] - self.graph.nodes[other]['x']) ** 2 +
+                                      (self.graph.nodes[node]['y'] - self.graph.nodes[other]['y']) ** 2) < 1
+                            for other in nodes_by_depth[z] if other != node
+                    ):
+                        print('    replot...')
+                        self.graph.nodes[node]['x'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
+                        self.graph.nodes[node]['y'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
 
-                while not q.empty():
-                    current_node, dist = q.get()
-                    x_current, y_current = self.graph.nodes[current_node]['x'], self.graph.nodes[current_node]['y']
-
-                    for pred in self.graph.predecessors(current_node):
-                        if self.graph.edges[pred, current_node]['type'] == "2" and pred not in visited:
-                            # Calculate the average position of successors
-                            x_avg = x_current
-                            y_avg = y_current
-                            count = 1
-                            for succ in self.graph.successors(pred):
-                                if self.graph.edges[pred, succ]['type'] == "2":
-                                    x_avg += self.graph.nodes[succ]['x']
-                                    y_avg += self.graph.nodes[succ]['y']
-                                    count += 1
-                            x_avg /= count
-                            y_avg /= count
-
-                            # Find a position in a circle around the average position
-                            while True:
-                                angle = random.uniform(0, 2 * math.pi)  # Random angle
-                                x_new = x_avg + (dist + 1) * 5 * math.cos(angle)
-                                y_new = y_avg + (dist + 1) * 5 * math.sin(angle)
-
-                                # Check if the new position is valid
-                                if all(math.sqrt((x_new - data['x']) ** 2 + (y_new - data['y']) ** 2) > 1
-                                       for other_node, data in self.graph.nodes(data=True) if
-                                       data['z'] == z and other_node != pred):
-                                    self.graph.nodes[pred]['x'] = x_new
-                                    self.graph.nodes[pred]['y'] = y_new
-                                    visited.add(pred)
-                                    q.put((pred, dist + 1))
-                                    break
-
-            # Distribute nodes that are not connected by connection2
-            for node in nodes_at_depth:
-                if node not in visited:
-                    while True:
-                        x = random.uniform(-50, 50)
-                        y = random.uniform(-50, 50)
-                        if all(math.sqrt((x - data['x']) ** 2 + (y - data['y']) ** 2) > 1
-                               for other_node, data in self.graph.nodes(data=True) if
-                               data['z'] == z and other_node != node):
-                            self.graph.nodes[node]['x'] = x
-                            self.graph.nodes[node]['y'] = y
-                            break
-
-    def calculate_coordinates(self):
+    def calculate_coordinates(self, xy_layout='spring'):
         z_coordinates = {}
         for node in self.graph.nodes():
             self._compute_z_coordinates_recursive(node, z_coordinates)
         print('ok')
-        # Call the _distribute_nodes method here to calculate x, y coordinates
-        self._distribute_nodes()
+        self._compute_xy_coordinates(xy_layout)
 
     def visualize_graph(self):
+        cone_size = 25
         labels = nx.get_node_attributes(self.graph, 'label')
         coords = {(id_): (data['x'], data['y'], data['z']) for id_, data in self.graph.nodes(data=True)}
 
@@ -226,6 +220,10 @@ class Graph:
         cone_u = []
         cone_v = []
         cone_w = []
+        loop_x = []
+        loop_y = []
+        loop_z = []
+
         for (start_id, end_id, data) in self.graph.edges(data=True):
             x_start, y_start, z_start = coords[start_id]
             x_end, y_end, z_end = coords[end_id]
@@ -238,44 +236,70 @@ class Graph:
                 edge_x_conn2.extend([x_start, x_end, None])
                 edge_y_conn2.extend([y_start, y_end, None])
                 edge_z_conn2.extend([z_start, z_end, None])
-                cone_x.append(x_end)
-                cone_y.append(y_end)
-                cone_z.append(z_end)
-                # Compute the vector from start to end
-                u = x_end - x_start
-                v = y_end - y_start
-                w = z_end - z_start
-                # Normalize the vector
-                length = (u ** 2 + v ** 2 + w ** 2) ** 0.5
-                u /= length
-                v /= length
-                w /= length
-                # Set the cone direction to be a vector of length `cone_length` in the direction of (u, v, w)
-                cone_u.append(u * 25)
-                cone_v.append(v * 25)
-                cone_w.append(w * 25)
+                if start_id == end_id:  # Detect loops
+                    loop_x.append(x_end)
+                    loop_y.append(y_end)
+                    loop_z.append(z_end)
+                else:
+                    u = x_end - x_start
+                    v = y_end - y_start
+                    w = z_end - z_start
+                    length = (u ** 2 + v ** 2 + w ** 2) ** 0.5
+                    if length > 0:  # Avoid division by zero
+                        u /= length
+                        v /= length
+                        w /= length
+                        cone_u.append(u * cone_size)
+                        cone_v.append(v * cone_size)
+                        cone_w.append(w * cone_size)
+                        cone_x.append(x_end)
+                        cone_y.append(y_end)
+                        cone_z.append(z_end)
 
         edge_trace_conn1 = go.Scatter3d(x=edge_x_conn1, y=edge_y_conn1, z=edge_z_conn1,
-                                        line=dict(width=2, color='grey'), mode='lines', opacity=0.5)
+                                        line=dict(width=2, color='grey'), mode='lines', opacity=0.1)
 
         edge_trace_conn2 = go.Scatter3d(x=edge_x_conn2, y=edge_y_conn2, z=edge_z_conn2,
-                                        line=dict(width=2, color='#32a850'), mode='lines')
+                                        line=dict(width=2, color='#32a850'), mode='lines', opacity=0.5)
+
         cone_trace = go.Cone(x=cone_x, y=cone_y, z=cone_z, u=cone_u, v=cone_v, w=cone_w,
-                             sizemode="scaled", sizeref=1, anchor="tip", colorscale=[[0, '#32a850'], [1, '#32a850']])
+                             sizemode="absolute", sizeref=10, anchor="tip", colorscale=[[0, '#32a850'], [1, '#32a850']], opacity=0.5)
+
+        loop_trace = go.Scatter3d(x=loop_x, y=loop_y, z=loop_z, mode='markers',
+                                  marker=dict(size=20, color='red', opacity=0.5),
+                                  name='Loops')
 
         node_x = []
         node_y = []
         node_z = []
+        node_color = []
+
+        max_in_degree_conn2 = max((data for node, data in self.graph.in_degree() if
+                                   any(d['type'] == "2" for _, _, d in self.graph.in_edges(node, data=True))),
+                                  default=1)
+        max_in_degree_conn1 = max((data for node, data in self.graph.in_degree() if
+                                   any(d['type'] == "1" for _, _, d in self.graph.in_edges(node, data=True))),
+                                  default=1)
+
         for id_, (x, y, z) in coords.items():
             node_x.append(x)
             node_y.append(y)
             node_z.append(z)
 
+            in_degree_conn1 = sum(1 for _, _, data in self.graph.in_edges(id_, data=True) if data['type'] == "1")
+            in_degree_conn2 = sum(1 for _, _, data in self.graph.in_edges(id_, data=True) if data['type'] == "2")
+
+            r = int((in_degree_conn2 / max_in_degree_conn2) * 255)
+            g = 0
+            b = int((in_degree_conn1 / max_in_degree_conn1) * 255)
+
+            node_color.append(f'rgb({r},{g},{b})')
+
         node_trace = go.Scatter3d(x=node_x, y=node_y, z=node_z, mode='markers',
-                                  marker=dict(size=10, color='blue', colorscale='Viridis', opacity=0.8),
+                                  marker=dict(size=2, color=node_color, opacity=0.8),
                                   text=list(labels.values()))
 
-        fig = go.Figure(data=[edge_trace_conn1, edge_trace_conn2, cone_trace, node_trace],
+        fig = go.Figure(data=[edge_trace_conn1, edge_trace_conn2, cone_trace, loop_trace, node_trace],
                         layout=go.Layout(scene=dict(aspectmode="cube"),
                                          margin=dict(t=0, b=0, l=0, r=0),
                                          ))
@@ -286,9 +310,17 @@ class Graph:
             zaxis_title='Z'
         ))
 
+        fig.update_layout(modebar_orientation="v")
         fig.update_layout(title="3D Visualization of the Graph")
         fig.show()
 
+    def save_graph(self, filename='saved_graph.pkl'):
+        with open(filename, 'wb') as f:
+            pickle.dump(self.graph, f)
+
+    def load_graph(self, filename='saved_graph.pkl'):
+        with open(filename, 'rb') as f:
+            self.graph = pickle.load(f)
 
 # Example usage focusing on connection1
 graph = Graph()
@@ -328,7 +360,8 @@ graph.add_edge("Rep4", "Rep5", "2", "Edge4-5")
 graph.add_edge("Rep6", "Rep5", "2", "Edge6-5")
 
 print('hi2')
-graph.calculate_coordinates()
+#spring, shell, kamada_kawai, fruchterman_reingold, spectral, planar
+graph.calculate_coordinates('kamada_kawai')
 print('hi3')
 # Visualizing the graph with computed coordinates
 graph.visualize_graph()
