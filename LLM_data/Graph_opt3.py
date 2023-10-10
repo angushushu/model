@@ -170,6 +170,16 @@ class Graph:
             return nx.spectral_layout(subgraph)
         elif layout == 'planar':
             return nx.planar_layout(subgraph)
+        elif layout == 'random':
+            return nx.random_layout(subgraph)
+        elif layout == 'circular':
+            return nx.circular_layout(subgraph)
+        elif layout == 'spiral':
+            return nx.spiral_layout(subgraph)
+        # elif layout == 'graphviz':
+        #     return nx.nx_agraph.graphviz_layout(subgraph)
+        elif layout == 'pydot':
+            return nx.nx_pydot.pydot_layout(subgraph)
         else:
             raise ValueError(
                 "Invalid layout type. Choose from ['shell', 'spring', 'kamada_kawai', 'fruchterman_reingold', 'spectral', 'planar']")
@@ -181,7 +191,7 @@ class Graph:
         while True:
             x = np.random.uniform(-50, 50)
             y = np.random.uniform(-50, 50)
-            bbox = (x - 0.5, y - 0.5, x + 0.5, y + 0.5)
+            bbox = (x - 0.1, y - 0.1, x + 0.1, y + 0.1)
             with lock:
                 if not any(True for _ in rtree_idx.intersection(bbox)):
                     self.graph.nodes[node]['x'] = x

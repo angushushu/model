@@ -124,8 +124,8 @@ class Graph:
             
             if not is_overlapping:
                 break
-        else:  # This block runs if the for loop completes without a break
-            print(f"Warning: Couldn't find a non-overlapping position for vertex {node} after {max_attempts} attempts. Assigning the last generated coordinates.")
+            else:  # This block runs if the for loop completes without a break
+                print(f"Warning: Couldn't find a non-overlapping position for vertex {node} after {max_attempts} attempts. Assigning the last generated coordinates.")
             
         self.graph.vp['x'][node] = x
         self.graph.vp['y'][node] = y
