@@ -1,9 +1,9 @@
-from Graph_opt3 import Graph
+from Graph_opt3_5 import Graph
 import json
 import os
 import time
 
-with open(os.path.join(os.getcwd(), 'sequences_2.json'), 'r') as file:
+with open(os.path.join(os.getcwd(), 'sequences_1_recoded.json'), 'r') as file:
     sequences = json.load(file)
 
 # Initialize Graph
@@ -44,7 +44,7 @@ for j, sequence in enumerate(sequences):  # Using all sequences
 # Calculate coordinates and visualize the graph
 #spring, shell, kamada_kawai, fruchterman_reingold, spectral, planar
 start = time.process_time()
-graph.calculate_coordinates('kamada_kawai')
+graph.calculate_coordinates('spring')
 graph.visualize_graph()
 end = time.process_time()
 print('CPU执行时间: ',end - start)

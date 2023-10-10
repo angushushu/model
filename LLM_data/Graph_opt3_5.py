@@ -1,12 +1,11 @@
 import networkx as nx
 import plotly.graph_objects as go
-import plotly.express as px
 import numpy as np
 import pickle
 from rtree import index
-import pandas as pd
 import concurrent.futures
 import threading
+
 
 # ADDED PARALLEL OPERATION
 
@@ -143,8 +142,8 @@ class Graph:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             predecessor_z_coords = np.array(list(executor.map(
                 lambda pred: self._compute_z_coordinates_recursive(pred, z_coordinates),
-                [predecessor for predecessor in self.graph.predecessors(node) 
-                if self.graph.edges[predecessor, node]['type'] == "1"]
+                [predecessor for predecessor in self.graph.predecessors(node)
+                 if self.graph.edges[predecessor, node]['type'] == "1"]
             )))
 
         # 使用 NumPy 的 max 函数来计算最大值
@@ -196,15 +195,15 @@ class Graph:
                 if not any(True for _ in rtree_idx.intersection(bbox)):
                     self.graph.nodes[node]['x'] = x
                     self.graph.nodes[node]['y'] = y
-                    rtree_idx.insert(node, (x, y, x, y)) 
+                    rtree_idx.insert(node, (x, y, x, y))
                     break
 
     def _compute_xy_coordinates(self, layout):
-        node_data = np.array([(id_, data['x'], data['y'], data['z']) 
-                            for id_, data in self.graph.nodes(data=True)], 
-                            dtype=[('id', int), ('x', float), ('y', float), ('z', int)])
+        node_data = np.array([(id_, data['x'], data['y'], data['z'])
+                              for id_, data in self.graph.nodes(data=True)],
+                             dtype=[('id', int), ('x', float), ('y', float), ('z', int)])
         max_z = np.max(node_data['z'])
-        
+
         for z in np.unique(node_data['z']):
             highest_z_nodes = node_data[node_data['z'] == z]['id']
             subgraph = self.graph.subgraph(highest_z_nodes).copy()
@@ -219,13 +218,13 @@ class Graph:
                     node_data['y'][node_data['id'] == node] = y
 
         rtree_idx = index.Index()
-        lock = threading.Lock() 
-        
+        lock = threading.Lock()
+
         with concurrent.futures.ThreadPoolExecutor() as executor:
             for z in reversed(range(max_z)):
                 for node in node_data[node_data['z'] == z]['id']:
                     successors = [succ for succ in self.graph.successors(node) if
-                                self.graph.edges[node, succ]['type'] == "1"]
+                                  self.graph.edges[node, succ]['type'] == "1"]
                     if successors:
                         succ_coords = node_data[np.isin(node_data['id'], successors)][['x', 'y']]
                         mean_x = np.mean(succ_coords['x'])
@@ -255,77 +254,61 @@ class Graph:
     def visualize_graph(self):
         arrow_length = 1
         labels = nx.get_node_attributes(self.graph, 'label')
-        # coords = {(id_): (data['x'], data['y'], data['z']) for id_, data in self.graph.nodes(data=True)}
 
-        edge_x_conn1 = []
-        edge_y_conn1 = []
-        edge_z_conn1 = []
-        edge_x_conn2 = []
-        edge_y_conn2 = []
-        edge_z_conn2 = []
-        loop_x = []
-        loop_y = []
-        loop_z = []
-        arrow_x = []
-        arrow_y = []
-        arrow_z = []
+        edge_data = np.array([(start_id, end_id,
+                               self.graph.nodes[start_id]['x'],
+                               self.graph.nodes[start_id]['y'],
+                               self.graph.nodes[start_id]['z'],
+                               self.graph.nodes[end_id]['x'],
+                               self.graph.nodes[end_id]['y'],
+                               self.graph.nodes[end_id]['z'],
+                               data['type'])
+                             for start_id, end_id, data in self.graph.edges(data=True)],
+                             dtype=[('start_id', int), ('end_id', int),
+                                    ('x_start', float), ('y_start', float), ('z_start', float),
+                                    ('x_end', float), ('y_end', float), ('z_end', float),
+                                    ('edge_type', 'U1')])
+
+        # Extract relevant data into ndarrays for vectorized operations
+        start_coords = np.array(edge_data[['x_start', 'y_start', 'z_start']].tolist())
+        end_coords = np.array(edge_data[['x_end', 'y_end', 'z_end']].tolist())
+        # Compute direction vectors
+        direction_vectors = end_coords - start_coords
+        edge_lengths = np.linalg.norm(direction_vectors.view(float).reshape(len(edge_data), -1), axis=1)
+        edge_lengths[edge_lengths == 0] = 1
+        unit_direction_vectors = direction_vectors.view(float).reshape(len(edge_data), -1) / edge_lengths[:, None]
+        # Extract relevant data into ndarrays for vectorized operations
+        end_coords = np.array(edge_data[['x_end', 'y_end', 'z_end']].tolist())
+        # Ensure arrow_length does not exceed half the edge_length
+        arrow_length = np.where(arrow_length > edge_lengths / 2, edge_lengths / 2, arrow_length)
+        # Compute arrow start points
+        arrow_start_points = end_coords - arrow_length[:, None] * unit_direction_vectors
+
+        is_conn1 = edge_data['edge_type'] == '1'
+        is_conn2 = edge_data['edge_type'] == '2'
+        is_loop = (edge_data['start_id'] == edge_data['end_id']) & is_conn2
+
+        edge_x_conn1 = np.vstack((edge_data['x_start'][is_conn1], edge_data['x_end'][is_conn1], np.full(np.sum(is_conn1), np.nan))).T.flatten()
+        edge_y_conn1 = np.vstack((edge_data['y_start'][is_conn1], edge_data['y_end'][is_conn1], np.full(np.sum(is_conn1), np.nan))).T.flatten()
+        edge_z_conn1 = np.vstack((edge_data['z_start'][is_conn1], edge_data['z_end'][is_conn1], np.full(np.sum(is_conn1), np.nan))).T.flatten()
+
+        edge_x_conn2 = np.vstack((edge_data['x_start'][is_conn2 & ~is_loop], edge_data['x_end'][is_conn2 & ~is_loop], np.full(np.sum(is_conn2 & ~is_loop), np.nan))).T.flatten()
+        edge_y_conn2 = np.vstack((edge_data['y_start'][is_conn2 & ~is_loop], edge_data['y_end'][is_conn2 & ~is_loop], np.full(np.sum(is_conn2 & ~is_loop), np.nan))).T.flatten()
+        edge_z_conn2 = np.vstack((edge_data['z_start'][is_conn2 & ~is_loop], edge_data['z_end'][is_conn2 & ~is_loop], np.full(np.sum(is_conn2 & ~is_loop), np.nan))).T.flatten()
+
+        arrow_x = np.vstack((arrow_start_points[is_conn2 & ~is_loop, 0], edge_data['x_end'][is_conn2 & ~is_loop], np.full(np.sum(is_conn2 & ~is_loop), np.nan))).T.flatten()
+        arrow_y = np.vstack((arrow_start_points[is_conn2 & ~is_loop, 1], edge_data['y_end'][is_conn2 & ~is_loop], np.full(np.sum(is_conn2 & ~is_loop), np.nan))).T.flatten()
+        arrow_z = np.vstack((arrow_start_points[is_conn2 & ~is_loop, 2], edge_data['z_end'][is_conn2 & ~is_loop], np.full(np.sum(is_conn2 & ~is_loop), np.nan))).T.flatten()
+
+        loop_x = edge_data['x_end'][is_loop]
+        loop_y = edge_data['y_end'][is_loop]
+        loop_z = edge_data['z_end'][is_loop]
 
         max_in_degree_conn2 = max((sum(1 for _, _, d in self.graph.in_edges(node, data=True) if d['type'] == "2")
                                 for node in self.graph.nodes()), default=1)
 
         max_in_degree_conn1 = max((sum(1 for _, _, d in self.graph.in_edges(node, data=True) if d['type'] == "1")
                                 for node in self.graph.nodes()), default=1)
-
-        # Parallel computation of edge and arrow coordinates
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            edge_arrow_results = list(executor.map(
-                lambda edge_data: (
-                    edge_data[0],  # start_id
-                    edge_data[1],  # end_id
-                    edge_data[2]['x'],
-                    edge_data[2]['y'],
-                    edge_data[2]['z'],
-                    edge_data[3]['x'],
-                    edge_data[3]['y'],
-                    edge_data[3]['z'],
-                    edge_data[4]['type'],
-                    ((edge_data[3]['x'] - edge_data[2]['x'])**2 + 
-                    (edge_data[3]['y'] - edge_data[2]['y'])**2 + 
-                    (edge_data[3]['z'] - edge_data[2]['z'])**2) ** 0.5  # edge_length
-                ),
-                [(start_id, end_id, self.graph.nodes[start_id], self.graph.nodes[end_id], data) 
-                for start_id, end_id, data in self.graph.edges(data=True)]
-            ))
-
-        # Extract edge and arrow coordinates
-        for start_id, end_id, x_start, y_start, z_start, x_end, y_end, z_end, edge_type, edge_length in edge_arrow_results:
-            if edge_type == "1":
-                edge_x_conn1.extend([x_start, x_end, None])
-                edge_y_conn1.extend([y_start, y_end, None])
-                edge_z_conn1.extend([z_start, z_end, None])
-            elif edge_type == "2":
-                if start_id == end_id:  # Detect loops
-                    loop_x.append(x_end)
-                    loop_y.append(y_end)
-                    loop_z.append(z_end)
-                else:
-                    edge_x_conn2.extend([x_start, x_end, None])
-                    edge_y_conn2.extend([y_start, y_end, None])
-                    edge_z_conn2.extend([z_start, z_end, None])
-                    if arrow_length > edge_length:
-                        arrow_length = edge_length / 2
-                    arrow_x_start = x_end - arrow_length * (x_end - x_start) / edge_length
-                    arrow_y_start = y_end - arrow_length * (y_end - y_start) / edge_length
-                    arrow_z_start = z_end - arrow_length * (z_end - z_start) / edge_length
-                    arrow_x.extend([arrow_x_start, x_end, None])
-                    arrow_y.extend([arrow_y_start, y_end, None])
-                    arrow_z.extend([arrow_z_start, z_end, None])
-
-        node_x = []
-        node_y = []
-        node_z = []
-        raw_colors = []
-
         # Parallel computation of node colors
         with concurrent.futures.ThreadPoolExecutor() as executor:
             node_results = list(executor.map(
@@ -334,13 +317,20 @@ class Graph:
                     node_data[1]['y'],
                     node_data[1]['z'],
                     (
-                        255 * (sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if d['type'] == "2") / max_in_degree_conn2),
-                        255 * (1 - sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if d['type'] == "2") / max_in_degree_conn2),
-                        200 * (1 - sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if d['type'] == "2") / max_in_degree_conn2)
-                    ) if sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if d['type'] == "2") > 0 else (
-                        255 * (sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if d['type'] == "1") / max_in_degree_conn1),
-                        255 * (sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if d['type'] == "1") / max_in_degree_conn1),
-                        200 * (1 - sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if d['type'] == "1") / max_in_degree_conn1)
+                        255 * (sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if
+                                   d['type'] == "2") / max_in_degree_conn2),
+                        255 * (1 - sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if
+                                       d['type'] == "2") / max_in_degree_conn2),
+                        200 * (1 - sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if
+                                       d['type'] == "2") / max_in_degree_conn2)
+                    ) if sum(
+                        1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if d['type'] == "2") > 0 else (
+                        255 * (sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if
+                                   d['type'] == "1") / max_in_degree_conn1),
+                        255 * (sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if
+                                   d['type'] == "1") / max_in_degree_conn1),
+                        200 * (1 - sum(1 for _, _, d in self.graph.in_edges(node_data[0], data=True) if
+                                       d['type'] == "1") / max_in_degree_conn1)
                     )
                 ),
                 self.graph.nodes(data=True)
@@ -352,28 +342,28 @@ class Graph:
 
         edge_trace_conn1 = go.Scatter3d(x=edge_x_conn1, y=edge_y_conn1, z=edge_z_conn1,
                                         line=dict(width=2, color='#5f8c94'), mode='lines', opacity=0.1,
-                                        name='Connection 1')  # 添加name属性
+                                        name='Connection 1')
 
         edge_trace_conn2 = go.Scatter3d(x=edge_x_conn2, y=edge_y_conn2, z=edge_z_conn2,
                                         line=dict(width=2, color='#E225F9'), mode='lines', opacity=0.3,
-                                        name='Connection 2')  # 添加name属性
+                                        name='Connection 2')
 
         arrow_trace = go.Scatter3d(x=arrow_x, y=arrow_y, z=arrow_z,
                                 line=dict(width=2.5, color='#FF013E'), mode='lines', opacity=0.6,
-                                name='Arrows')  # 添加name属性
+                                name='Arrows')
 
         loop_trace = go.Scatter3d(x=loop_x, y=loop_y, z=loop_z, mode='markers',
                                 marker=dict(size=10, color='#E225F9', opacity=0.5),
                                 name='Loops')  # 添加name属性
 
         node_trace = go.Scatter3d(x=node_x, y=node_y, z=node_z, mode='markers',
-                                marker=dict(size=3, color=node_color, opacity=0.8),
-                                text=list(labels.values()), name='Nodes')  # 添加name属性
+                                  marker=dict(size=3, color=node_color, opacity=0.8),
+                                  text=list(labels.values()), name='Nodes')  # 添加name属性
 
         fig = go.Figure(data=[edge_trace_conn1, edge_trace_conn2, arrow_trace, loop_trace, node_trace],
                         layout=go.Layout(scene=dict(aspectmode="cube"),
-                                        margin=dict(t=0, b=0, l=0, r=0),
-                                        ))
+                                         margin=dict(t=0, b=0, l=0, r=0),
+                                         ))
 
         fig.update_layout(scene=dict(
             xaxis_title='X',

@@ -26,11 +26,15 @@ total_sequences = len(sequences)
 sequence_cnt = 1
 miss_cnt = 0
 for sequence in (bar := tqdm(sequences, desc='PROG', position=0)):
+    if sequence is None:
+        continue
     new_sequence = []
     total_states = len(sequence)
     state_cnt = 1
     # print(f'S[{sequence_cnt}]')
     for state in sequence:
+        if state is None:
+            continue
         try_cnt = 1
         for i in range(5):
             bar.set_postfix_str(f"S{state_cnt}/{total_states}, T{try_cnt}/5, M{miss_cnt}")
