@@ -1,4 +1,4 @@
-from Graph_opt2 import Graph
+from Graph_opt4 import Graph
 
 # Example usage focusing on connection1
 graph = Graph()
@@ -37,6 +37,6 @@ graph.add_edge("Rep4", "Rep5", "2", "Edge4-5")
 graph.add_edge("Rep6", "Rep5", "2", "Edge6-5")
 
 #spring, shell, kamada_kawai, fruchterman_reingold, spectral, planar
-graph.calculate_coordinates('kamada_kawai')
+graph.calculate_coordinates('spring')
 # Visualizing the graph with computed coordinates
 graph.visualize_graph()

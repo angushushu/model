@@ -1,4 +1,4 @@
-from Graph_opt3 import Graph
+from Graph_opt4 import Graph
 import json
 import os
 import time
@@ -44,7 +44,7 @@ for j, sequence in enumerate(sequences):  # Using all sequences
 # Calculate coordinates and visualize the graph
 #spring, shell, kamada_kawai, fruchterman_reingold, spectral, planar
 start = time.process_time()
-graph.calculate_coordinates('spring')
+graph.calculate_coordinates('fruchterman_reingold')
 graph.visualize_graph()
 end = time.process_time()
 print('CPU执行时间: ',end - start)

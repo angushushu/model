@@ -8,6 +8,8 @@ import pandas as pd
 import concurrent.futures
 import threading
 
+# ADDED PARALLEL OPERATION
+
 class Graph:
     def __init__(self):
         """
@@ -179,7 +181,7 @@ class Graph:
         while True:
             x = np.random.uniform(-50, 50)
             y = np.random.uniform(-50, 50)
-            bbox = (x - 1, y - 1, x + 1, y + 1)
+            bbox = (x - 0.5, y - 0.5, x + 0.5, y + 0.5)
             with lock:
                 if not any(True for _ in rtree_idx.intersection(bbox)):
                     self.graph.nodes[node]['x'] = x

@@ -6,6 +6,8 @@ import pickle
 from rtree import index
 import pandas as pd
 
+# ADDED NUMPY & ALGORITHMS UPDATE, VISUALIZATION UPDATE
+
 class Graph:
     def __init__(self):
         """
@@ -176,7 +178,7 @@ class Graph:
         while True:
             x = np.random.uniform(-50, 50)
             y = np.random.uniform(-50, 50)
-            bbox = (x - 1, y - 1, x + 1, y + 1)  # Bounding box to query nearby nodes
+            bbox = (x - 0.5, y - 0.5, x + 0.5, y + 0.5)  # Bounding box to query nearby nodes
             if not any(True for _ in rtree_idx.intersection(bbox)):
                 break  # Found a non-overlapping position
 
