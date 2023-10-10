@@ -297,7 +297,7 @@ class Graph:
         fig.show()
     
     def save_graph(self, filename='saved_graph.gt'):
-        gt.save_graph(self.graph, filename)
+        self.graph.save(filename, fmt='gt')
 
     def load_graph(self, filename='saved_graph.gt'):
         self.graph = gt.load_graph(filename)
