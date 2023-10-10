@@ -1,8 +1,9 @@
-from Graph_opt import Graph
+from Graph_opt3 import Graph
 import json
 import os
+import time
 
-with open(os.getcwd()+'/sequences.json', 'r') as file:
+with open(os.path.join(os.getcwd(), 'sequences_2.json'), 'r') as file:
     sequences = json.load(file)
 
 # Initialize Graph
@@ -23,16 +24,11 @@ id_gen = generate_id()
 for j, sequence in enumerate(sequences):  # Using all sequences
     if sequence is None:
         continue
-    # print('sequence', sequence)
     label_seq = []
     for i, state in enumerate(sequence):
-        # print('i', i)
-        # print('state', state)
         state_id = next(id_gen)
         state_label = str(state)
-        # print('state_label', state_label)
         state_label = graph.add_rep(state_label, value=sorted(state))  # Storing id as value for future use
-        # print(state_label)
         label_seq.append(state_label)
 
         # Add elements as nodes and connect them to the state node with connection1
@@ -47,13 +43,9 @@ for j, sequence in enumerate(sequences):  # Using all sequences
 
 # Calculate coordinates and visualize the graph
 #spring, shell, kamada_kawai, fruchterman_reingold, spectral, planar
-graph.calculate_coordinates('kamada_kawai')
-print('hi')
+start = time.process_time()
+graph.calculate_coordinates('spring')
 graph.visualize_graph()
-print('hi2')
-for node, data in graph.graph.nodes(data=True):
-    if data['label'] == 'Seq1-S3':
-        print(graph.graph.nodes[node]['x'],graph.graph.nodes[node]['y'],graph.graph.nodes[node]['z'])
-    if data['label'] == 'Seq1-S4':
-        print(graph.graph.nodes[node]['x'],graph.graph.nodes[node]['y'],graph.graph.nodes[node]['z'])
+end = time.process_time()
+print('CPU执行时间: ',end - start)
 graph.save_graph('saved_graph.pkl')

@@ -32,12 +32,12 @@ and more than one behavior or posture. Please provide a rich collection of \
 states, including as many elements as possible. For example: \
 {table, windows, coffee shop, sunny, anxiety, sad, ordering, taking out, wallet, standing}."""
 states = []
-while len(states) < 100:
+while len(states) < 1000:
     time.sleep(5+5*random.random())
     response = palm.chat(messages=prompt, candidate_count=4)
     for cand in response.candidates:
         new_states = extract_states(cand['content'])
         states += new_states
 
-with open(os.getcwd()+'/states_2.json', 'w', encoding='utf-8') as f:
+with open(os.getcwd()+'/states_3.json', 'w', encoding='utf-8') as f:
     json.dump(states, f, ensure_ascii=False, indent=4)

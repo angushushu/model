@@ -29,7 +29,7 @@ def extract_sequence(input_string):
     else:
         return None
 
-with open(os.getcwd()+'/states.json', 'r') as file:
+with open(os.getcwd()+'/states_3.json', 'r') as file:
     data = json.load(file)
     init_states = [state for state in data]
     sequences = []
@@ -82,5 +82,5 @@ Now, proceed to generate a list of numbered states following the steps and forma
             print(resp_seq)
             sequences.append(extract_sequence(resp_seq))
 
-    with open(os.getcwd()+'/sequences.json', 'w', encoding='utf-8') as new_file:
+    with open(os.getcwd()+'/sequences_3.json', 'w', encoding='utf-8') as new_file:
         json.dump(sequences, new_file, ensure_ascii=False, indent=4)

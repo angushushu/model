@@ -123,8 +123,8 @@ class Graph:
                     if self.graph.edges[predecessor, node]['type'] == "1")
         z_coordinates[node] = max_z + 2
         self.graph.nodes[node]['z'] = max_z + 2
-        if(self.graph.nodes[node]['label']=='State3'):
-            print(self.graph.nodes[node]['z'])
+        # if(self.graph.nodes[node]['label']=='State3'):
+        #     print(self.graph.nodes[node]['z'])
         return max_z + 2
 
     def _compute_xy_coordinates(self, layout):
@@ -156,12 +156,12 @@ class Graph:
                 raise ValueError(
                     "Invalid layout type. Choose from ['shell', 'spring', 'kamada_kawai', 'fruchterman_reingold', 'spectral', 'planar']")
             for node, pos in layout_pos.items():
-                print('drawing ...')
+                # print('drawing ...')
                 self.graph.nodes[node]['x'] = pos[0] * 50  # scaling to avoid overlap, adjust if necessary
                 self.graph.nodes[node]['y'] = pos[1] * 50  # scaling to avoid overlap, adjust if necessary
         else:
             for node in highest_z_nodes:
-                print('drawing ...')
+                # print('drawing ...')
                 self.graph.nodes[node]['x'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
                 self.graph.nodes[node]['y'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
                 while any(
@@ -169,14 +169,14 @@ class Graph:
                                   (self.graph.nodes[node]['y'] - self.graph.nodes[other]['y']) ** 2) < 1
                         for other in highest_z_nodes if other != node
                 ):
-                    print('    replot...')
+                    # print('    replot...')
                     self.graph.nodes[node]['x'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
                     self.graph.nodes[node]['y'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
 
         # Handling nodes with lower z based on average position of successors and avoiding overlap
         for z in reversed(range(max_z)):
             for node in nodes_by_depth[z]:
-                print('drawing ...')
+                # print('drawing ...')
                 successors = [succ for succ in self.graph.successors(node) if
                               self.graph.edges[node, succ]['type'] == "1"]
                 if successors:
@@ -192,7 +192,7 @@ class Graph:
                                       (self.graph.nodes[node]['y'] - self.graph.nodes[other]['y']) ** 2) < 1
                             for other in nodes_by_depth[z] if other != node
                     ):
-                        print('    replot...')
+                        # print('    replot...')
                         self.graph.nodes[node]['x'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
                         self.graph.nodes[node]['y'] = np.random.uniform(-50, 50) + random.uniform(-1, 1)
 
@@ -200,7 +200,7 @@ class Graph:
         z_coordinates = {}
         for node in self.graph.nodes():
             self._compute_z_coordinates_recursive(node, z_coordinates)
-        print('ok')
+        # print('ok')
         self._compute_xy_coordinates(xy_layout)
 
     def visualize_graph(self):
@@ -324,7 +324,7 @@ class Graph:
 
 # Example usage focusing on connection1
 graph = Graph()
-print('hi')
+# print('hi')
 
 # z = 1
 graph.add_rep("Rep1")
@@ -359,9 +359,9 @@ graph.add_edge("Rep7", "Rep8", "2", "Edge7-8")
 graph.add_edge("Rep4", "Rep5", "2", "Edge4-5")
 graph.add_edge("Rep6", "Rep5", "2", "Edge6-5")
 
-print('hi2')
+# print('hi2')
 #spring, shell, kamada_kawai, fruchterman_reingold, spectral, planar
 graph.calculate_coordinates('kamada_kawai')
-print('hi3')
+# print('hi3')
 # Visualizing the graph with computed coordinates
 graph.visualize_graph()

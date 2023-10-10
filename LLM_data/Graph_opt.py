@@ -1,13 +1,10 @@
 import networkx as nx
-import matplotlib.pyplot as plt
-import math
 import plotly.graph_objects as go
-import random
+import plotly.express as px
 import numpy as np
-import queue
 import pickle
-import scipy
 from rtree import index
+import pandas as pd
 
 class Graph:
     def __init__(self):
@@ -152,7 +149,7 @@ class Graph:
                     for predecessor in self.graph.predecessors(node)
                     if self.graph.edges[predecessor, node]['type'] == "1")
 
-        current_z = max_z + 2
+        current_z = max_z + 1
         z_coordinates[node] = current_z
         self.graph.nodes[node]['z'] = current_z
 
@@ -235,8 +232,9 @@ class Graph:
     def _compute_color(self, r, g, b):
         return f"rgb({int(r)},{int(g)},{int(b)})"
 
+
     def visualize_graph(self):
-        arrow_length_ratio = 0.1  # 可以根据需要调整箭头长度占边长的比例
+        arrow_length = 1  # 可以根据需要调整箭头长度占边长的比例
         labels = nx.get_node_attributes(self.graph, 'label')
         coords = {(id_): (data['x'], data['y'], data['z']) for id_, data in self.graph.nodes(data=True)}
 
@@ -278,9 +276,15 @@ class Graph:
                     loop_z.append(z_end)
                 else:
                     # 计算箭头的起点（新点）
-                    arrow_x_start = x_end - arrow_length_ratio * (x_end - x_start)
-                    arrow_y_start = y_end - arrow_length_ratio * (y_end - y_start)
-                    arrow_z_start = z_end - arrow_length_ratio * (z_end - z_start)
+                    edge_length = ((x_end - x_start)**2 + (y_end - y_start)**2 + (z_end - z_start)**2) ** 0.5
+                    if arrow_length > edge_length:
+                        arrow_x_start = x_end - 0.5 * (x_end - x_start)
+                        arrow_y_start = y_end - 0.5 * (y_end - y_start)
+                        arrow_z_start = z_end - 0.5 * (z_end - z_start)
+                    else:
+                        arrow_x_start = x_end - (arrow_length / edge_length) * (x_end - x_start)
+                        arrow_y_start = y_end - (arrow_length / edge_length) * (y_end - y_start)
+                        arrow_z_start = z_end - (arrow_length / edge_length) * (z_end - z_start)
 
                     # 将箭头的坐标添加到对应的列表中
                     arrow_x.extend([arrow_x_start, x_end, None])
@@ -303,13 +307,13 @@ class Graph:
             if in_degree_conn2 > 0:
                 # 使用红色系 (255, 102, 102)
                 r = 255 * (in_degree_conn2 / max_in_degree_conn2)
-                g = 0 * (in_degree_conn2 / max_in_degree_conn2)
-                b = 0 * (in_degree_conn2 / max_in_degree_conn2)
+                g = 255 * (1 - in_degree_conn2 / max_in_degree_conn2)
+                b = 200 * (1 - in_degree_conn2 / max_in_degree_conn2)
             else:
                 # 使用黄色系 (255, 224, 102)
                 r = 255 * (in_degree_conn1 / max_in_degree_conn1)
                 g = 255 * (in_degree_conn1 / max_in_degree_conn1)
-                b = 0 * (in_degree_conn1 / max_in_degree_conn1)
+                b = 200 * (1 - in_degree_conn1 / max_in_degree_conn1)
 
             raw_colors.append((r, g, b))
 
@@ -320,17 +324,17 @@ class Graph:
                                         line=dict(width=2, color='#5f8c94'), mode='lines', opacity=0.1)
 
         edge_trace_conn2 = go.Scatter3d(x=edge_x_conn2, y=edge_y_conn2, z=edge_z_conn2,
-                                        line=dict(width=2, color='#d16eff'), mode='lines', opacity=0.5)
+                                        line=dict(width=2, color='#E225F9'), mode='lines', opacity=0.3)
 
         arrow_trace = go.Scatter3d(x=arrow_x, y=arrow_y, z=arrow_z,
-                                   line=dict(width=2.5, color='#fc035e'), mode='lines', opacity=0.5)
+                                   line=dict(width=2.5, color='#FF013E'), mode='lines', opacity=0.6)
 
         loop_trace = go.Scatter3d(x=loop_x, y=loop_y, z=loop_z, mode='markers',
-                                  marker=dict(size=10, color='#fc035e', opacity=0.5),
+                                  marker=dict(size=10, color='#E225F9', opacity=0.5),
                                   name='Loops')
 
         node_trace = go.Scatter3d(x=node_x, y=node_y, z=node_z, mode='markers',
-                                  marker=dict(size=4, color=node_color, opacity=0.8),
+                                  marker=dict(size=3, color=node_color, opacity=0.8),
                                   text=list(labels.values()))
 
         fig = go.Figure(data=[edge_trace_conn1, edge_trace_conn2, arrow_trace, loop_trace, node_trace],
@@ -356,44 +360,3 @@ class Graph:
     def load_graph(self, filename='saved_graph.pkl'):
         with open(filename, 'rb') as f:
             self.graph = pickle.load(f)
-
-# Example usage focusing on connection1
-graph = Graph()
-
-# z = 1
-graph.add_rep("Rep1")
-graph.add_rep("Rep2")
-graph.add_rep("Rep3")
-# z = 2
-graph.add_rep("Rep4")
-graph.add_rep("Rep5")
-graph.add_rep("Rep6")
-graph.add_rep("Rep9")
-# z = 3
-graph.add_rep("Rep7")
-graph.add_rep("Rep8")
-
-graph.add_edge("Rep1", "Rep4", "1", "Edge1-4")
-graph.add_edge("Rep2", "Rep4", "1", "Edge2-4")
-graph.add_edge("Rep1", "Rep5", "1", "Edge1-5")
-graph.add_edge("Rep3", "Rep5", "1", "Edge5-5")
-graph.add_edge("Rep2", "Rep6", "1", "Edge2-6")
-graph.add_edge("Rep3", "Rep6", "1", "Edge3-6")
-
-graph.add_edge("Rep4", "Rep7", "1", "Edge4-7")
-graph.add_edge("Rep5", "Rep7", "1", "Edge5-7")
-graph.add_edge("Rep4", "Rep8", "1", "Edge4-8")
-graph.add_edge("Rep4", "Rep8", "1", "Edge4-8")
-graph.add_edge("Rep1", "Rep9", "1", "Edge1-9")
-graph.add_edge("Rep2", "Rep9", "1", "Edge2-9")
-graph.add_edge("Rep3", "Rep9", "1", "Edge3-9")
-
-graph.add_edge("Rep5", "Rep8", "2", "Edge5-8")
-graph.add_edge("Rep7", "Rep8", "2", "Edge7-8")
-graph.add_edge("Rep4", "Rep5", "2", "Edge4-5")
-graph.add_edge("Rep6", "Rep5", "2", "Edge6-5")
-
-#spring, shell, kamada_kawai, fruchterman_reingold, spectral, planar
-graph.calculate_coordinates('kamada_kawai')
-# Visualizing the graph with computed coordinates
-graph.visualize_graph()
