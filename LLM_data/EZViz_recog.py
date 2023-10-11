@@ -47,6 +47,11 @@ for y in range(img_test.shape[0]):
 for i in range(10):
     nn.add_rep(f'o{i}', x=i*3, y=15, z=1)
 
+# for i in range(10):
+#     for y in range(img_test.shape[0]):
+#         for x in range(img_test.shape[1]):
+#             nn.add_edge(f'{x}-{y}', f'o{i}', weight=random.uniform(0, 1))
+
 # hidden
 # for y2 in range(10):
 #     for x2 in range(10):
@@ -71,8 +76,8 @@ for i, data in enumerate(train_loader):
             for x in range(img.shape[1]):
                 # print(float(img[y][x]))
                 input[f'{x}-{y}'] = float(img[y][x])
-                # if img[y][x] > 0:
-                nn.add_edge(f'{x}-{y}', f'o{label}', weight=random.uniform(0, 1))
+                if img[y][x] > 0:
+                    nn.add_edge(f'{x}-{y}', f'o{label}', weight=random.uniform(0, 1))
                 # for y2 in range(10):
                 #     for x2 in range(10):
                 #         nn.add_edge(f'{x}-{y}', f'h{x2}-{y2}', weight=random.uniform(0, 1))
@@ -80,7 +85,7 @@ for i, data in enumerate(train_loader):
         nn.forward_propagation(input)
         nn.backward_propagation(output)
     cnt += 1
-    if cnt > 2000:
+    if cnt > 20:
         break
 print('cnt', cnt)
 
@@ -105,7 +110,7 @@ for i, data in enumerate(test_loader):
             correct += 1
         total += 1
     cnt += 1
-    if cnt > 5:
+    if cnt > 2:
         break
 print('cnt', cnt)
 print(f'{correct}/{total}')

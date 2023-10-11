@@ -51,7 +51,7 @@ class Graph:
         content = content if content is not None else rep_id
 
         # Add the node to the graph
-        self.graph.add_node(rep_id, label=label, x=x, y=y, z=z, content=content, value=.0, weight=.0, delta=.0, bias=.0)
+        self.graph.add_node(rep_id, label=label, x=x, y=y, z=z, content=content, value=.0, weight=.0, delta=1.0, bias=.0)
         self.label_to_id_map[label] = rep_id
 
         return label
@@ -651,26 +651,32 @@ class Graph:
             input_values (dict): A dictionary where keys are input node labels and values are input values.
         """
         # Initialize input values
+        # print('input', input_values)
         for node_id, data in self.graph.nodes(data=True):
-            data['value'] = input_values.get(data['label'], 0)
-        # print(input_values)
+            data['value'] = input_values.get(data['label'], .0)
+            # print(f"{data['label']}: {data['value']}")
 
         # Iteratively compute the output of each node
         for node_id in list(nx.topological_sort(self.graph)):  # Ensure we compute in the right order
             node_data = self.graph.nodes[node_id]
-            if node_data['label'] not in input_values:
-                node_data['value'] = self._sigmoid(node_data['value'])
-            # print(f"{data['label']}: {data['value']}")
-            for successor_id in self.graph.successors(node_id):
-                edge_data = self.graph[node_id][successor_id]
-                if edge_data['type'] == '1':  # Only propagate through type 1 edges
-                    successor_data = self.graph.nodes[successor_id]
-                    weight = edge_data['weight']
-                    successor_data['value'] += node_data['value'] * weight
-        # for node, data in self.graph.nodes(data=True):
-            # print(f"{data['label']}: {data['value']}")
+            if self.graph.in_degree(node_id) > 0:
+                new_val = .0
+                for predecessor_id in self.graph.predecessors(node_id):
+                    edge_data = self.graph[predecessor_id][node_id]
+                    pred_data = self.graph.nodes[predecessor_id]
+                    if edge_data['type'] == '1':  # Only propagate through type 1 edges
+                        weight = edge_data['weight']
+                        new_val += pred_data['value'] * weight
+                        # print('new_val:', new_val)
+                # print(f"{node_data['label']}: {new_val + node_data['bias']}")
+                node_data['value'] = self._sigmoid(new_val + node_data['bias'])
+                # print(f" |--{node_data['value']}")
+                
+        # for node_id, data in self.graph.nodes(data=True):
+        #     if sum(1 for _, _, d in self.graph.out_edges(node_id, data=True) if d['type'] == '1') < 1:
+        #         print(f"{data['label']} >> E:{data['value']}")
 
-    def backward_propagation(self, expected_output, learning_rate=0.1):
+    def backward_propagation(self, expected_output, learning_rate=0.1, d_loss='mse'):
         """
         Perform backward propagation through the network, updating weights and biases.
 
@@ -678,22 +684,42 @@ class Graph:
             expected_output (dict): A dictionary where keys are output node labels and values are expected output values.
             learning_rate (float): The learning rate for weight and bias updates.
         """
+
         # Initialize delta values
         for node_id, data in self.graph.nodes(data=True):
-            error = expected_output.get(data['label'], 0) - data['value']
-            data['delta'] = error * self._sigmoid_derivative(data['value'])
-            print('err', error)
+            if sum(1 for _, _, d in self.graph.out_edges(node_id, data=True) if d['type'] == '1') < 1:
+                # print(f"{data['label']} >> E:{expected_output.get(data['label'], 0)} P:{data['value']}")
+                # error = expected_output.get(data['label'], 0) - data['value']
+                error = expected_output.get(data['label'], 0) - data['value']
+                data['delta'] = error
+                # print(error)
+                # print('output delta', data['delta'])
+            else:
+                data['delta'] = 1
 
-        # Compute delta values for hidden nodes and update weights
-        for node_id in reversed(list(nx.topological_sort(self.graph))):  # Compute in reverse order
+        # Compute delta values for hidden nodes
+        for node_id in reversed(list(nx.topological_sort(self.graph))):
+            if sum(1 for _, _, d in self.graph.out_edges(node_id, data=True) if d['type'] == '1') < 1:
+                continue
+            node_data = self.graph.nodes[node_id]
+            for successor_id in self.graph.successors(node_id):
+                edge_data = self.graph[node_id][successor_id]
+                if edge_data['type'] == '1':  # Only backpropagate through type 1 edges
+                    successor_data = self.graph.nodes[successor_id]
+                    # Accumulate delta for hidden nodes
+                    node_data['delta'] += successor_data['delta'] * edge_data['weight'] * self._sigmoid_derivative(node_data['value'])
+                    # print('succ_delta', successor_data['delta'])
+                    # print('weight', successor_data['delta'])
+                    # print('sigmoied_derivative', self._sigmoid_derivative(node_data['value']))
+            # print('node_delta', node_data['delta'])
+                    
+        # Update the weights and biases
+        for node_id in reversed(list(nx.topological_sort(self.graph))):
             node_data = self.graph.nodes[node_id]
             for predecessor_id in self.graph.predecessors(node_id):
                 edge_data = self.graph[predecessor_id][node_id]
-                if edge_data['type'] == '1':  # Only backpropagate through type 1 edges
+                if edge_data['type'] == '1':
                     pred_data = self.graph.nodes[predecessor_id]
-                    # Update delta for hidden nodes
-                    pred_data['delta'] = node_data['delta'] * edge_data['weight'] * self._sigmoid_derivative(
-                        pred_data['value'])
                     # Update weight
                     edge_data['weight'] += learning_rate * pred_data['value'] * node_data['delta']
                     # Update bias
