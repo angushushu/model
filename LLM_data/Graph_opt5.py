@@ -689,7 +689,6 @@ class Graph:
         for node_id, data in self.graph.nodes(data=True):
             if sum(1 for _, _, d in self.graph.out_edges(node_id, data=True) if d['type'] == '1') < 1:
                 # print(f"{data['label']} >> E:{expected_output.get(data['label'], 0)} P:{data['value']}")
-                # error = expected_output.get(data['label'], 0) - data['value']
                 error = expected_output.get(data['label'], 0) - data['value']
                 data['delta'] = error
                 # print(error)
