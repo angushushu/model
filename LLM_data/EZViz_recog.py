@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from Graph_opt5 import Graph
+from tqdm import tqdm
 
 train_dataset = datasets.MNIST(root='./data',
                                train=True,
@@ -51,6 +52,7 @@ for i in range(10):
     for y in range(img_test.shape[0]):
         for x in range(img_test.shape[1]):
             nn.add_edge(f'{x}-{y}', f'o{i}', weight=random.uniform(0, 1))
+# 100 ep - 127/192
 # 10 ep - 115/192
 
 # hidden
@@ -63,35 +65,31 @@ for i in range(10):
 #         for i in range(10):
 #             nn.add_edge(f'h{x2}-{y2}', f'o{i}', weight=random.uniform(0, 1))
 # training
-cnt = 0
-for i, data in enumerate(train_loader):
-    imgs, labels = data
-    for j in range(len(imgs)):
-        img = imgs[j][0].numpy()
-        # print(img.shape)
-        label = labels[j]
-        # print(f'o{label}')
-        input = dict()
-        output = {f'o{label}':1}
-        for y in range(img.shape[0]):
-            for x in range(img.shape[1]):
-                # print(float(img[y][x]))
-                input[f'{x}-{y}'] = float(img[y][x])
-                # if img[y][x] > 0:
-                #     nn.add_edge(f'{x}-{y}', f'o{label}', weight=1.0)
-                # ep 10 - ~60
-                # for y2 in range(10):
-                #     for x2 in range(10):
-                #         nn.add_edge(f'{x}-{y}', f'h{x2}-{y2}', weight=random.uniform(0, 1))
-                # randomize weight?
-        nn.forward_propagation(input)
-        nn.backward_propagation(output)
-    cnt += 1
-    if cnt > 100:
-        break
-print('cnt', cnt)
+for i, data in enumerate(bar:=tqdm(train_loader)):
+    for episode in range(10):
+        bar.set_description()
+        imgs, labels = data
+        for j in range(len(imgs)):
+            img = imgs[j][0].numpy()
+            # print(img.shape)
+            label = labels[j]
+            # print(f'o{label}')
+            input = dict()
+            output = {f'o{label}':1}
+            for y in range(img.shape[0]):
+                for x in range(img.shape[1]):
+                    # print(float(img[y][x]))
+                    input[f'{x}-{y}'] = float(img[y][x])
+                    # if img[y][x] > 0:
+                    #     nn.add_edge(f'{x}-{y}', f'o{label}', weight=random.uniform(0,0.1))
+                    # ep 10 - ~60
+                    # for y2 in range(10):
+                    #     for x2 in range(10):
+                    #         nn.add_edge(f'{x}-{y}', f'h{x2}-{y2}', weight=random.uniform(0, 1))
+                    # randomize weight?
+            nn.forward_propagation(input)
+            nn.backward_propagation(output)
 
-cnt = 0
 correct = 0
 total = 0
 for i, data in enumerate(test_loader):
@@ -111,9 +109,5 @@ for i, data in enumerate(test_loader):
         if nn.graph.nodes[max_value_node]['label'] == f'o{label}':
             correct += 1
         total += 1
-    cnt += 1
-    if cnt > 2:
-        break
-print('cnt', cnt)
 print(f'{correct}/{total}')
 nn.visualize_graph(['o7', 'o8'])
