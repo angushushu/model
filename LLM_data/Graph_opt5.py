@@ -17,6 +17,7 @@ class Graph:
         self.graph = nx.DiGraph()
         self.id_generator = self._id_generator()
         # 使用字典来存储label 和 id 的映射
+        self.content_to_label_map = {}
         self.label_to_id_map = {}
 
     def _id_generator(self):
@@ -44,6 +45,13 @@ class Graph:
         if not isinstance(label, str):
             raise ValueError("Label must be a string.")
 
+        # Convert content to a string for hashing
+        content_key = str(content)
+
+        # Use a dictionary to map contents to labels for O(1) lookup time
+        if content is not None and content_key in self.content_to_label_map:
+            return self.content_to_label_map[content_key]
+
         # Generate unique ID
         rep_id = next(self.id_generator)
 
@@ -52,6 +60,7 @@ class Graph:
 
         # Add the node to the graph
         self.graph.add_node(rep_id, label=label, x=x, y=y, z=z, content=content, value=.0, weight=.0, delta=1.0, bias=.0)
+        self.content_to_label_map[content_key] = label
         self.label_to_id_map[label] = rep_id
 
         return label
@@ -104,7 +113,7 @@ class Graph:
         # 删除节点
         self.graph.remove_node(node_id)
 
-    def add_edge(self, start_label, end_label, connection_type="1", label="", weight=.0):
+    def add_edge(self, start_label, end_label, connection_type="1", label="", weight=1.0):
         """
         Add an edge between nodes with given start and end labels.
 

@@ -67,7 +67,7 @@ for i in range(10):
 # training
 for i, data in enumerate(bar:=tqdm(train_loader)):
     for episode in range(10):
-        bar.set_description()
+        bar.set_description(f'{episode+1 }/10')
         imgs, labels = data
         for j in range(len(imgs)):
             img = imgs[j][0].numpy()
@@ -110,4 +110,4 @@ for i, data in enumerate(test_loader):
             correct += 1
         total += 1
 print(f'{correct}/{total}')
-nn.visualize_graph(['o7', 'o8'])
+nn.visualize_graph(['o1'])

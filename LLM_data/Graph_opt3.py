@@ -17,8 +17,8 @@ class Graph:
         """
         self.graph = nx.DiGraph()
         self.id_generator = self._id_generator()
-        # 使用字典来存储 value 到 label 和 id 的映射
-        self.value_to_label_map = {}
+        # 使用字典来存储 content 到 label 和 id 的映射
+        self.content_to_label_map = {}
         self.label_to_id_map = {}
 
     def _id_generator(self):
@@ -30,13 +30,13 @@ class Graph:
             yield i
             i += 1
 
-    def add_rep(self, label, value=None):
+    def add_rep(self, label, content=None):
         """
         Add a representative node with a given label to the graph.
 
         Parameters:
             label (str): The label for the node.
-            value: The value for the node. If a node with this value already exists,
+            content: The value for the node. If a node with this value already exists,
                    the label of the existing node is returned.
 
         Returns:
@@ -46,24 +46,24 @@ class Graph:
         if not isinstance(label, str):
             raise ValueError("Label must be a string.")
 
-        # Convert value to a string for hashing
-        value_key = str(value)
+        # Convert content to a string for hashing
+        content_key = str(content)
 
-        # Use a dictionary to map values to labels for O(1) lookup time
-        if value is not None and value_key in self.value_to_label_map:
-            return self.value_to_label_map[value_key]
+        # Use a dictionary to map contents to labels for O(1) lookup time
+        if content is not None and content_key in self.content_to_label_map:
+            return self.content_to_label_map[content_key]
 
         # Generate unique ID
         rep_id = next(self.id_generator)
 
-        # If value is not provided, use the generated ID
-        value = value if value is not None else rep_id
+        # If content is not provided, use the generated ID
+        content = content if content is not None else rep_id
 
         # Add the node to the graph
-        self.graph.add_node(rep_id, label=label, x=0, y=0, z=0, value=value)
+        self.graph.add_node(rep_id, label=label, x=0, y=0, z=0, content=content)
 
         # Update the value-to-label map and label-to-id map
-        self.value_to_label_map[value_key] = label
+        self.content_to_label_map[content_key] = label
         self.label_to_id_map[label] = rep_id
 
         return label
@@ -102,15 +102,15 @@ class Graph:
         # Add the edge to the graph
         self.graph.add_edge(start_id, end_id, type=connection_type, label=label, weight=weight)
 
-    def get_value(self, label):
+    def get_content(self, label):
         """
-        Retrieve the 'value' attribute of a node given its label.
+        Retrieve the 'content' attribute of a node given its label.
 
         Parameters:
             label (str): The label of the node.
 
         Returns:
-            The 'value' attribute of the node or None if not found.
+            The 'content' attribute of the node or None if not found.
         """
         # Validate parameters
         if not isinstance(label, str):
@@ -119,8 +119,8 @@ class Graph:
         # Use NumPy to get the node ID
         node_id = np.array(self.node_info['id'])[np.where(np.array(self.node_info['label']) == label)[0]]
 
-        # If node ID is found, return its 'value' attribute, otherwise return None
-        return self.graph.nodes[node_id[0]]['value'] if node_id.size > 0 else None
+        # If node ID is found, return its 'content' attribute, otherwise return None
+        return self.graph.nodes[node_id[0]]['content'] if node_id.size > 0 else None
 
     def _get_leaf_nodes(self):
         """

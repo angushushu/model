@@ -28,12 +28,12 @@ for j, sequence in enumerate(sequences):  # Using all sequences
     for i, state in enumerate(sequence):
         state_id = next(id_gen)
         state_label = str(state)
-        state_label = graph.add_rep(state_label, value=sorted(state))  # Storing id as value for future use
+        state_label = graph.add_rep(state_label, content=sorted(state))  # Storing id as value for future use
         label_seq.append(state_label)
 
         # Add elements as nodes and connect them to the state node with connection1
         for element in state:
-            element_label = graph.add_rep(label=element, value=element)
+            element_label = graph.add_rep(label=element, content=element)
             # print('element_label', element_label)
             graph.add_edge(element_label, state_label, connection_type="1")
 
@@ -44,8 +44,8 @@ for j, sequence in enumerate(sequences):  # Using all sequences
 # Calculate coordinates and visualize the graph
 #spring, shell, kamada_kawai, fruchterman_reingold, spectral, planar
 start = time.process_time()
-graph.calculate_coordinates('spring')
+graph.calculate_coordinates('fruchterman_reingold')
 graph.visualize_graph()
 end = time.process_time()
-print('CPU执行时间: ',end - start)
+print('CPU执行时间: ', end - start)
 graph.save_graph('saved_graph.pkl')
